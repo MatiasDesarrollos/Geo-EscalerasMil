@@ -2111,16 +2111,32 @@ setupDropZones();
 
 renderAll();
 
-if (!config) {
-  setStatus('', 'Sin configuración', '');
-  document.getElementById('config-notice').style.display = 'block';
-} else {
+async function init() {
+  if (!config) {
+    try {
+      const res = await fetch('/api/config');
+      const remote = await res.json();
+      if (remote.db && remote.username && remote.apikey) {
+        config = remote;
+        saveConfig();
+      }
+    } catch (_) {}
+  }
+
+  if (!config || !config.db || !config.username || !config.apikey) {
+    setStatus('', 'Sin configuración', '');
+    document.getElementById('config-notice').style.display = 'block';
+    return;
+  }
+
   setStatus('', 'Conectando...', '');
   odooAuth().then(() => loadAvailablePickings()).catch(err => {
     setStatus('error', 'Error', err.message);
     showToast('Error: ' + err.message, 'error');
   });
 }
+
+init();
 </script>
 </body>
 </html>
