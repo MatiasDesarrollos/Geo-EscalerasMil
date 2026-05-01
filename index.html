@@ -632,8 +632,6 @@
 <div class="modal-overlay" id="config-modal">
   <div class="modal">
     <h3>Configuración de Odoo</h3>
-    <label>URL</label>
-    <input type="text" id="cfg-url" placeholder="http://localhost:8765">
     <label>Base de datos</label>
     <input type="text" id="cfg-db" placeholder="odoo">
     <label>Usuario (email)</label>
@@ -996,7 +994,7 @@ function getRouteZoneSummary(route) {
 // ============================================================================
 async function odooCall(service, method, args) {
   if (!config) throw new Error('Sin configuración');
-  const res = await fetch(config.url + '/jsonrpc', {
+  const res = await fetch('/jsonrpc', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', method: 'call', params: { service, method, args } })
@@ -2016,7 +2014,6 @@ document.getElementById('btn-clear-zone').addEventListener('click', () => {
 // ============================================================================
 document.getElementById('btn-config').addEventListener('click', () => {
   if (config) {
-    document.getElementById('cfg-url').value = config.url || '';
     document.getElementById('cfg-db').value = config.db || '';
     document.getElementById('cfg-username').value = config.username || '';
     document.getElementById('cfg-apikey').value = config.apikey || '';
@@ -2028,7 +2025,6 @@ document.getElementById('btn-config').addEventListener('click', () => {
 
 document.getElementById('btn-save-config').addEventListener('click', async () => {
   config = {
-    url: document.getElementById('cfg-url').value.trim().replace(/\/$/, ''),
     db: document.getElementById('cfg-db').value.trim(),
     username: document.getElementById('cfg-username').value.trim(),
     apikey: document.getElementById('cfg-apikey').value.trim(),
@@ -2038,7 +2034,7 @@ document.getElementById('btn-save-config').addEventListener('click', async () =>
   orsKey = document.getElementById('cfg-orskey').value.trim();
   saveOrsKey();
 
-  if (!config.url || !config.db || !config.username || !config.apikey) { showToast('Completá todos los campos de Odoo', 'error'); return; }
+  if (!config.db || !config.username || !config.apikey) { showToast('Completá todos los campos de Odoo', 'error'); return; }
   saveConfig(); uid = null; closeModal('config-modal');
   document.getElementById('config-notice').style.display = 'none';
   setStatus('', 'Autenticando...', '');
