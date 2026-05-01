@@ -1,2 +1,0 @@
-# Solo usa la stdlib de Python (urllib, json, os, http.server)
-# No requiere dependencias externas
