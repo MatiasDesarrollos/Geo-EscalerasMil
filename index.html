@@ -138,6 +138,8 @@
   .btn:hover { border-color: var(--ink); color: var(--ink); }
   .btn-accent { background: var(--accent); color: white; border-color: var(--accent); }
   .btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: white; }
+  .btn-ghost { border-color: transparent; color: var(--ink-soft); opacity: 0.35; font-size: 11px; padding: 6px 10px; }
+  .btn-ghost:hover { opacity: 1; border-color: var(--border-strong); color: var(--ink); }
   .btn-sm { padding: 5px 10px; font-size: 11px; }
 
   .workspace { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 16px; height: calc(100vh - 280px); min-height: 500px; }
@@ -495,7 +497,7 @@
     <div class="toolbar-info" id="toolbar-info">Configurá la conexión con Odoo para empezar</div>
     <div class="header-actions">
       <button class="btn" id="btn-zones">🌎 Zonas</button>
-      <button class="btn" id="btn-config">⚙ Config</button>
+      <button class="btn btn-ghost" id="btn-config">⚙</button>
       <button class="btn" id="btn-refresh">↻ Refrescar</button>
       <button class="btn btn-accent" id="btn-new-route">+ Nueva ruta</button>
     </div>
