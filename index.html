@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de Rutas · Escaleras Mil</title>
+<link rel="icon" type="image/png" href="https://escalerasmil.com.ar/wp-content/uploads/2023/10/Escaleras-Mil.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    /* Paleta Escaleras Mil — industrial */
+    --bg: #f5f5f4;
+    --surface: #ffffff;
+    --ink: #18181b;
+    --ink-soft: #52525b;
+    --ink-faded: #a1a1aa;
+    --border: #e4e4e7;
+    --border-strong: #d4d4d8;
+    --accent: #ea580c;          /* naranja Escaleras Mil */
+    --accent-soft: #fff7ed;
+    --accent-hover: #c2410c;
+    --accent-dark: #9a3412;
+    --green: #15803d;
+    --green-soft: #dcfce7;
+    --blue: #1d4ed8;
+    --blue-soft: #dbeafe;
+    --amber: #b45309;
+    --amber-soft: #fef3c7;
+    --red: #b91c1c;
+    --red-soft: #fee2e2;
+    --purple: #6b21a8;
+    --purple-soft: #f3e8ff;
+    --black: #09090b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+    font-size: 13px; line-height: 1.5; min-height: 100vh;
+    padding: 0;
+  }
+  .container { max-width: 1800px; margin: 0 auto; padding: 0 20px 20px; }
+
+  /* Top bar corporativa */
+  .topbar {
+    background: var(--black);
+    color: #d4d4d8;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 6px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .topbar-left { display: flex; gap: 16px; flex-wrap: wrap; }
+  .topbar-left a { color: #d4d4d8; text-decoration: none; }
+  .topbar-left a:hover { color: var(--accent); }
+  .topbar-right { display: flex; gap: 12px; }
+  .topbar-right a { color: #d4d4d8; text-decoration: none; }
+  .topbar-right a:hover { color: var(--accent); }
+
+  /* Header con logo y branding */
+  .brand-header {
+    background: var(--surface);
+    border-bottom: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .brand-header-inner {
+    max-width: 1800px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .brand-logo img {
+    height: 56px;
+    width: auto;
+  }
+  .brand-divider {
+    width: 1px; height: 40px;
+    background: var(--border-strong);
+  }
+  .app-title h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .app-title h1 span { color: var(--accent); }
+  .app-title .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 2px;
+  }
+
+  header.app-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .toolbar-info {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+  }
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .btn { padding: 8px 14px; border: 1px solid var(--border-strong); background: var(--surface); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); cursor: pointer; border-radius: 2px; transition: all 0.15s; white-space: nowrap; }
+  .btn:hover { border-color: var(--ink); color: var(--ink); }
+  .btn-accent { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-accent:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: white; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .workspace { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 16px; height: calc(100vh - 280px); min-height: 500px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; background: linear-gradient(to bottom, #fafaf9 0%, var(--surface) 100%); }
+  .panel-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.04em; line-height: 1; }
+  .panel-count { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 0.06em; padding: 3px 8px; background: var(--bg); border-radius: 100px; border: 1px solid var(--border); }
+  .panel-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+
+  .panel-body { flex: 1; overflow-y: auto; padding: 8px; }
+  .panel-search { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .panel-search input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); background: var(--bg); font-family: inherit; font-size: 12px; color: var(--ink); border-radius: 2px; outline: none; }
+  .panel-search input:focus { border-color: var(--accent); }
+
+  /* Subtítulo bajo el title */
+  .subtitle { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* ============ ZONE TREE ============ */
+  .zone-tree-wrap {
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    max-height: 240px; overflow-y: auto;
+  }
+  .zone-tree-header {
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faded);
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .zone-tree-header button {
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; font-size: 9px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .zone-tree { padding: 4px 0; }
+  .zone-node { user-select: none; }
+  .zone-row {
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.1s;
+    border-left: 3px solid transparent;
+  }
+  .zone-row:hover { background: var(--accent-soft); }
+  .zone-row.selected { background: var(--accent-soft); border-left-color: var(--accent); font-weight: 600; }
+  .zone-toggle {
+    width: 14px; text-align: center;
+    color: var(--ink-faded);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  }
+  .zone-toggle.invisible { visibility: hidden; }
+  .zone-name { flex: 1; }
+  .zone-count {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    color: var(--ink-faded);
+    background: var(--surface);
+    padding: 1px 6px; border-radius: 100px;
+    border: 1px solid var(--border);
+  }
+  .zone-row.selected .zone-count { color: var(--accent); border-color: var(--accent); }
+  .zone-children { padding-left: 16px; }
+  .zone-children.collapsed { display: none; }
+
+  /* Pickings */
+  .picking-card {
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--ink-soft);
+    padding: 10px 12px; margin-bottom: 6px; cursor: grab; transition: all 0.15s;
+    position: relative;
+  }
+  .picking-card:hover { border-color: var(--border-strong); background: var(--accent-soft); border-left-color: var(--accent); }
+  .picking-card.dragging { opacity: 0.4; cursor: grabbing; }
+  .picking-card.state-assigned { border-left-color: var(--green); }
+  .picking-card.state-confirmed { border-left-color: var(--blue); }
+  .picking-card.no-address { border-left-color: var(--red); border-left-width: 4px; background: #fef9f9; }
+  .picking-card.no-address:hover { background: var(--red-soft); }
+  .pc-meta.no-addr { color: var(--red); font-weight: 600;  }
+
+  .pc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .pc-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: var(--ink); }
+  .pc-pill { font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 100px; white-space: nowrap; }
+  .pc-pill.assigned { background: var(--green-soft); color: var(--green); }
+  .pc-pill.confirmed { background: var(--blue-soft); color: var(--blue); }
+  .pc-client { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 14px; line-height: 1.2; margin-bottom: 3px; }
+  .pc-meta { font-size: 11px; color: var(--ink-soft); line-height: 1.35; }
+  .pc-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 1px 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 100px; margin-right: 3px; color: var(--ink-faded); }
+  .pc-tag.zone { background: var(--purple-soft); border-color: var(--purple-soft); color: var(--purple); font-weight: 600; }
+
+  .drop-zone { min-height: 100%; padding: 4px; transition: background 0.15s; }
+  .drop-zone.drag-over { background: var(--accent-soft); border: 2px dashed var(--accent); }
+
+  /* Routes */
+  .route-card { background: var(--surface); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+  .route-card:hover { border-color: var(--border-strong); }
+  .route-card.active { border-color: var(--accent); border-left: 3px solid var(--accent); background: var(--accent-soft); }
+  .route-card.complete { border-left: 3px solid var(--green); }
+  .rc-progress { height: 4px; background: var(--bg); border-radius: 100px; margin: 6px 0; overflow: hidden; }
+  .rc-progress-bar { height: 100%; background: var(--green); border-radius: 100px; transition: width 0.3s; }
+  .rc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .rc-name { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; line-height: 1.2; }
+  .rc-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .rc-zone { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 7px; background: var(--purple-soft); color: var(--purple); border-radius: 100px; font-weight: 600; margin-bottom: 6px; }
+  .rc-zone.mixed { background: var(--amber-soft); color: var(--amber); }
+  .rc-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rc-stat { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 100px; font-weight: 600; }
+  .rc-stat.pendiente { background: var(--bg); color: var(--ink-soft); }
+  .rc-stat.entregado { background: var(--green-soft); color: var(--green); }
+  .rc-stat.rechazado { background: var(--red-soft); color: var(--red); }
+  .rc-stat.reprogramado { background: var(--amber-soft); color: var(--amber); }
+
+  /* Stops */
+  .stop-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--ink-faded); padding: 10px 12px; margin-bottom: 6px; transition: all 0.15s; }
+  .stop-card.s-pendiente { border-left-color: var(--ink-soft); }
+  .stop-card.s-entregado { border-left-color: var(--green); background: #f0fdf4; }
+  .stop-card.s-rechazado { border-left-color: var(--red); background: #fef2f2; }
+  .stop-card.s-reprogramado { border-left-color: var(--amber); background: #fffbeb; }
+
+  .stop-order { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 100px; background: var(--ink); color: white; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; margin-right: 6px; }
+  .stop-card.s-entregado .stop-order { background: var(--green); }
+  .stop-card.s-rechazado .stop-order { background: var(--red); }
+  .stop-card.s-reprogramado .stop-order { background: var(--amber); }
+
+  .stop-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+  .stop-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; }
+  .stop-status { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 100px; white-space: nowrap; }
+  .stop-status.pendiente { background: var(--bg); color: var(--ink-soft); border: 1px solid var(--border); }
+  .stop-status.entregado { background: var(--green-soft); color: var(--green); }
+  .stop-status.rechazado { background: var(--red-soft); color: var(--red); }
+  .stop-status.reprogramado { background: var(--amber-soft); color: var(--amber); }
+
+  .stop-geo { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-faded); margin-top: 4px; }
+  .stop-geo.no-geo { color: var(--red); }
+
+  .stop-actions { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .action-btn { flex: 1; min-width: 70px; padding: 5px 8px; border: 1px solid var(--border); background: var(--surface); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; border-radius: 2px; transition: all 0.15s; }
+  .action-btn:hover { border-color: var(--ink); }
+  .action-btn.entregar { background: var(--green-soft); color: var(--green); border-color: var(--green-soft); }
+  .action-btn.entregar:hover { background: var(--green); color: white; border-color: var(--green); }
+  .action-btn.rechazar { background: var(--red-soft); color: var(--red); border-color: var(--red-soft); }
+  .action-btn.rechazar:hover { background: var(--red); color: white; border-color: var(--red); }
+  .action-btn.reprogramar { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-soft); }
+  .action-btn.reprogramar:hover { background: var(--amber); color: white; border-color: var(--amber); }
+  .action-btn.deshacer { background: var(--bg); color: var(--ink-soft); }
+
+  .empty { padding: 40px 16px; text-align: center; color: var(--ink-faded); font-family: 'Barlow Condensed', sans-serif;  font-size: 14px; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(26,24,20,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--surface); padding: 28px; border: 1px solid var(--border); width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal.wide { max-width: 720px; }
+  .modal h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 16px; }
+  .modal label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin-bottom: 4px; margin-top: 12px; }
+  .modal input, .modal textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border-strong); background: var(--bg); font-family: inherit; font-size: 13px; color: var(--ink); border-radius: 2px; outline: none; }
+  .modal textarea { font-family: 'JetBrains Mono', monospace; font-size: 11px; min-height: 320px; line-height: 1.5; }
+  .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .modal-help { font-size: 11px; color: var(--ink-soft); margin-top: 6px; line-height: 1.5; }
+  .modal-help code { background: var(--bg); padding: 1px 5px; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+
+  /* Confirm modal */
+  .confirm-modal { max-width: 440px; }
+  .confirm-modal .modal-icon { font-size: 32px; margin-bottom: 8px; }
+  .confirm-modal p { font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; line-height: 1.5; }
+  .confirm-modal p strong { color: var(--ink); }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 20px; background: var(--ink); color: var(--bg); font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-radius: 2px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 2000; max-width: 400px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--red); }
+
+  /* Status bar */
+  .status-bar { padding: 8px 14px; background: var(--black); color: #d4d4d8; display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; border-left: 4px solid var(--ink-faded); }
+  .status-bar .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 100px; background: var(--ink-faded); margin-right: 6px; }
+  .status-bar.connected { border-left-color: #10b981; }
+  .status-bar.connected .status-dot { background: #10b981; box-shadow: 0 0 8px #10b981; }
+  .status-bar.error { border-left-color: var(--red); }
+  .status-bar.error .status-dot { background: var(--red); }
+
+  .config-notice { padding: 16px 20px; background: var(--amber-soft); border: 1px solid var(--amber); margin-bottom: 16px; font-size: 12px; color: var(--amber); }
+  .config-notice strong { font-weight: 700; }
+  .config-notice code { background: white; padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; border-radius: 2px; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-soft); }
+
+  /* Map fullscreen modal */
+  .map-fullscreen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    background: var(--bg);
+    flex-direction: column;
+  }
+  .map-fullscreen.show { display: flex; }
+  .map-fullscreen-header {
+    padding: 12px 20px;
+    background: var(--ink);
+    color: var(--bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .map-fullscreen-header h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .map-fullscreen-header .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faded);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 2px;
+  }
+  .map-fullscreen-actions { display: flex; gap: 8px; }
+  .map-fullscreen-actions .btn {
+    background: transparent;
+    color: var(--bg);
+    border-color: rgba(255,255,255,0.2);
+  }
+  .map-fullscreen-actions .btn:hover {
+    border-color: var(--bg);
+    color: var(--bg);
+  }
+  .map-fullscreen-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    overflow: hidden;
+  }
+  .map-fullscreen-list {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .map-fullscreen-stop {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 3px solid var(--ink-faded);
+  }
+  .map-fullscreen-stop:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .map-fullscreen-stop.s-entregado { border-left-color: var(--green); background: #f0fdf4; }
+  .map-fullscreen-stop.s-rechazado { border-left-color: var(--red); background: #fef2f2; }
+  .map-fullscreen-stop.s-reprogramado { border-left-color: var(--amber); background: #fffbeb; }
+  .map-fullscreen-stop .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 100px;
+    background: var(--ink); color: white;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+    margin-right: 6px;
+  }
+  .map-fullscreen-stop.s-entregado .num { background: var(--green); }
+  .map-fullscreen-stop.s-rechazado .num { background: var(--red); }
+  .map-fullscreen-stop.s-reprogramado .num { background: var(--amber); }
+  .map-fullscreen-stop .client { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 13px; line-height: 1.2; margin-top: 4px; }
+  .map-fullscreen-stop .addr { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  .map-fullscreen-stop .no-geo-warn { font-size: 9px; color: var(--red); margin-top: 4px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
+  #fullscreen-map { width: 100%; height: 100%; }
+
+  @media (max-width: 700px) {
+    .map-fullscreen-body { grid-template-columns: 1fr; grid-template-rows: 200px 1fr; }
+    .map-fullscreen-list { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+
+  /* Map */
+  #mini-map { width: 100%; height: 100%; }
+  .leaflet-container { font-family: inherit; }
+  .marker-num { background: var(--accent); color: white; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; }
+  .marker-num.entregado { background: var(--green); }
+  .marker-num.rechazado { background: var(--red); }
+  .marker-num.reprogramado { background: var(--amber); }
+
+  /* Print */
+  .print-page { display: none; background: white; color: black; }
+  @media print {
+    body * { visibility: hidden; }
+    .print-page, .print-page * { visibility: visible; }
+    .print-page { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 12mm; }
+    @page { size: A4; margin: 0; }
+  }
+  .print-page { font-family: 'Barlow', sans-serif; font-size: 11px; line-height: 1.4; }
+  .print-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid black; padding-bottom: 8px; margin-bottom: 12px; }
+  .print-header h2 { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.02em; margin-bottom: 2px; }
+  .print-header .ph-meta { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .print-header .ph-stats { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  .print-header .ph-stats strong { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; display: block; }
+  .print-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; height: calc(100vh - 90px); }
+  .print-list { overflow: hidden; }
+  .print-stop { border: 1px solid #ccc; padding: 7px 10px; margin-bottom: 5px; page-break-inside: avoid; display: grid; grid-template-columns: 28px 1fr; gap: 8px; }
+  .print-stop-num { background: black; color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; }
+  .print-stop-body { font-size: 10px; }
+  .print-stop-client { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 1px; }
+  .print-stop-meta { color: #555; }
+  .print-stop-tags { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+  .print-stop-check { width: 14px; height: 14px; border: 1.5px solid black; display: inline-block; vertical-align: middle; margin-right: 4px; }
+  .print-stop-actions { margin-top: 4px; display: flex; gap: 8px; font-size: 9px; }
+  .print-stop-actions span { display: flex; align-items: center; }
+  #print-map { height: 100%; width: 100%; border: 1px solid #ccc; }
+  .print-footer { margin-top: 8px; padding-top: 6px; border-top: 1px solid #ccc; display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.06em; color: #666; }
+</style>
+</head>
+<body>
+<!-- Top bar corporativa -->
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="https://escalerasmil.com.ar" target="_blank">📍 Av. Caseros 1980 · CABA</a>
+    <a href="tel:+5491153658896">☎ 5365-8896 / 4306-1111</a>
+    <a href="https://api.whatsapp.com/send?phone=5491137253323" target="_blank">💬 WhatsApp 11 3725-3323</a>
+    <a href="mailto:info@escalerasmil.com">✉ info@escalerasmil.com</a>
+  </div>
+  <div class="topbar-right">
+    <a href="https://www.facebook.com/escalerasmil" target="_blank">Facebook</a>
+    <a href="https://www.instagram.com/escalerasmil/" target="_blank">Instagram</a>
+  </div>
+</div>
+
+<!-- Header con logo y branding -->
+<div class="brand-header">
+  <div class="brand-header-inner">
+    <div class="brand-logo">
+      <img src="https://escalerasmil.com.ar/wp-content/uploads/2023/10/Escaleras-Mil.png" alt="Escaleras Mil">
+      <div class="brand-divider"></div>
+      <div class="app-title">
+        <h1>GESTOR DE <span>RUTAS</span></h1>
+        <div class="sub">Logística · Armado y seguimiento de entregas</div>
+      </div>
+    </div>
+    <div style="font-family: 'Barlow Condensed', sans-serif; text-align: right;">
+      <div style="font-size: 11px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 0.1em; font-family: 'JetBrains Mono', monospace;">Sistema de gestión</div>
+      <div style="font-size: 18px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em;">Rutas de reparto</div>
+    </div>
+  </div>
+</div>
+
+<div class="container" id="main-container">
+  <header class="app-toolbar">
+    <div class="toolbar-info" id="toolbar-info">Configurá la conexión con Odoo para empezar</div>
+    <div class="header-actions">
+      <button class="btn" id="btn-zones">🌎 Zonas</button>
+      <button class="btn" id="btn-config">⚙ Config</button>
+      <button class="btn" id="btn-refresh">↻ Refrescar</button>
+      <button class="btn btn-accent" id="btn-new-route">+ Nueva ruta</button>
+    </div>
+  </header>
+
+  <div class="status-bar" id="status-bar">
+    <span><span class="status-dot"></span><span id="status-text">Sin conectar</span></span>
+    <span id="status-meta"></span>
+  </div>
+
+  <div id="config-notice" class="config-notice" style="display:none">
+    <strong>⚙ Configurá la conexión a Odoo</strong> antes de empezar. Click en el botón <code>⚙ Config</code> arriba a la derecha.
+  </div>
+
+  <div class="workspace">
+    <!-- COLUMNA 1: Disponibles + zonas -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Disponibles</div>
+          <div class="subtitle" style="margin-top:2px">Pickings sin ruta asignada</div>
+        </div>
+        <span class="panel-count" id="count-available">0</span>
+      </div>
+      <div class="zone-tree-wrap">
+        <div class="zone-tree-header">
+          <span>📍 Filtrar por zona</span>
+          <button id="btn-clear-zone">Mostrar todas</button>
+        </div>
+        <div class="zone-tree" id="zone-tree"></div>
+        <div style="padding: 8px 12px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft);">
+          <input type="checkbox" id="hide-no-address" style="margin: 0; cursor: pointer;">
+          <label for="hide-no-address" style="cursor: pointer;">Ocultar sin dirección</label>
+          <span id="no-addr-count" style="margin-left: auto; color: var(--red); font-weight: 700;"></span>
+        </div>
+      </div>
+      <div class="panel-search">
+        <input type="text" id="search-available" placeholder="Buscar cliente, dirección, picking...">
+      </div>
+      <div class="panel-body drop-zone" id="zone-available" data-target="available"></div>
+    </div>
+
+    <!-- COLUMNA 2: Rutas -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Rutas</div>
+          <div class="subtitle" style="margin-top:2px">Click para ver paradas</div>
+        </div>
+        <span class="panel-count" id="count-routes">0 rutas</span>
+      </div>
+      <div class="panel-body" id="zone-routes"></div>
+    </div>
+
+    <!-- COLUMNA 3: Detalle + mapa -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title" id="route-detail-title">Selecciona una ruta</div>
+          <div class="subtitle" style="margin-top:2px" id="route-detail-meta">—</div>
+        </div>
+        <div class="panel-actions" id="route-actions" style="display:none">
+          <button class="btn btn-sm" id="btn-view-map" title="Ver mapa fullscreen">🗺️ Ver mapa</button>
+          <button class="btn btn-sm" id="btn-google-maps" title="Abrir en Google Maps">🌐 Google Maps</button>
+          <button class="btn btn-sm" id="btn-geocode" title="Buscar coordenadas">📍 Geocodificar</button>
+          <button class="btn btn-sm" id="btn-optimize" title="Reordenar">🧠 Optimizar</button>
+          <button class="btn btn-sm" id="btn-print" title="Imprimir">🖨 Imprimir</button>
+          <button class="btn btn-sm" id="btn-delete-route">🗑 Eliminar</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="drop-zone" id="zone-stops" data-target="stops" style="height: 100%; overflow-y: auto; padding: 8px;">
+          <div class="empty">Arrastrá pickings desde "Disponibles" para armar una ruta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="margin-top: 24px; padding: 16px 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <img src="https://escalerasmil.com.ar/wp-content/uploads/2023/10/Escaleras-Mil.png" style="height: 24px; opacity: 0.6;" alt="Escaleras Mil">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 0.1em;">© Escaleras Mil · Sistema interno de logística</span>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-faded); text-transform: uppercase; letter-spacing: 0.1em;">
+      v3.0 · Gestor de rutas
+    </div>
+  </footer>
+</div>
+<div class="print-page" id="print-page">
+  <div class="print-header">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <img src="https://escalerasmil.com.ar/wp-content/uploads/2023/10/Escaleras-Mil.png" style="height: 50px;" alt="Escaleras Mil">
+      <div style="border-left: 2px solid #000; padding-left: 14px;">
+        <h2 id="print-title">—</h2>
+        <div class="ph-meta" id="print-meta">—</div>
+      </div>
+    </div>
+    <div class="ph-stats">
+      <strong id="print-count">0</strong>
+      paradas
+    </div>
+  </div>
+  <div class="print-grid">
+    <div class="print-list" id="print-list"></div>
+    <div id="print-map"></div>
+  </div>
+  <div class="print-footer">
+    <span id="print-footer-left">Hoja de ruta</span>
+    <span id="print-footer-right">—</span>
+  </div>
+</div>
+
+<!-- Map fullscreen -->
+<div class="map-fullscreen" id="map-fullscreen">
+  <div class="map-fullscreen-header">
+    <div>
+      <h3 id="fs-title">—</h3>
+      <div class="meta" id="fs-meta">—</div>
+    </div>
+    <div class="map-fullscreen-actions">
+      <button class="btn" id="btn-fs-google">🌐 Abrir en Google Maps</button>
+      <button class="btn" id="btn-fs-optimize">🧠 Optimizar</button>
+      <button class="btn" id="btn-fs-print">🖨 Imprimir</button>
+      <button class="btn" id="btn-fs-close">✕ Cerrar</button>
+    </div>
+  </div>
+  <div class="map-fullscreen-body">
+    <div class="map-fullscreen-list" id="fs-list"></div>
+    <div id="fullscreen-map"></div>
+  </div>
+</div>
+
+<!-- Modal config Odoo -->
+<div class="modal-overlay" id="config-modal">
+  <div class="modal">
+    <h3>Configuración de Odoo</h3>
+    <label>URL</label>
+    <input type="text" id="cfg-url" placeholder="http://localhost:8765">
+    <label>Base de datos</label>
+    <input type="text" id="cfg-db" placeholder="odoo">
+    <label>Usuario (email)</label>
+    <input type="text" id="cfg-username">
+    <label>API Key</label>
+    <input type="password" id="cfg-apikey">
+    <label>Picking Type ID (filtro)</label>
+    <input type="number" id="cfg-ptype" placeholder="8" value="8">
+    <label>OpenRouteService API Key (opcional, para rutas reales)</label>
+    <input type="password" id="cfg-orskey" placeholder="Pegá tu API key de openrouteservice.org">
+    <p class="modal-help">Conseguila gratis en <code>openrouteservice.org/dev/#/signup</code> · 2000 rutas/día</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('config-modal')">Cancelar</button>
+      <button class="btn btn-accent" id="btn-save-config">Guardar y conectar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nueva ruta -->
+<div class="modal-overlay" id="route-modal">
+  <div class="modal">
+    <h3>Nueva ruta</h3>
+    <label>Nombre</label>
+    <input type="text" id="route-name" placeholder="Ej: Lunes 5/5 Zona Norte">
+    <label>Chofer</label>
+    <input type="text" id="route-driver">
+    <label>Fecha</label>
+    <input type="date" id="route-date">
+    <label>Punto de partida (opcional)</label>
+    <input type="text" id="route-origin" placeholder="Ej: Av. del Libertador 1000, CABA">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('route-modal')">Cancelar</button>
+      <button class="btn btn-accent" id="btn-save-route">Crear ruta</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de zonas -->
+<div class="modal-overlay" id="zones-modal">
+  <div class="modal wide">
+    <h3>🌎 Configuración de zonas</h3>
+    <p class="modal-help">
+      Definí las zonas en formato JSON. Cada zona puede tener <code>cities</code> (lista de ciudades) y/o <code>states</code> (provincias en formato Odoo). Las zonas pueden anidarse en <code>children</code>.
+    </p>
+    <label>Zonas (JSON)</label>
+    <textarea id="zones-json"></textarea>
+    <p class="modal-help" id="zones-error" style="color:var(--red); display:none"></p>
+    <div class="modal-actions">
+      <button class="btn" id="btn-reset-zones">Restablecer default</button>
+      <button class="btn" onclick="closeModal('zones-modal')">Cancelar</button>
+      <button class="btn btn-accent" id="btn-save-zones">Guardar zonas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación cruce de zonas -->
+<div class="modal-overlay" id="cross-zone-modal">
+  <div class="modal confirm-modal">
+    <div class="modal-icon">⚠️</div>
+    <h3>Estás cruzando zonas</h3>
+    <p>La ruta <strong id="cz-route"></strong> tiene paradas en <strong id="cz-current"></strong>.</p>
+    <p>Estás agregando una parada de <strong id="cz-new"></strong>.</p>
+    <p style="margin-top:12px"><strong>¿Querés agregarla igualmente?</strong></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('cross-zone-modal'); window._crossZoneAccept = false;">Cancelar</button>
+      <button class="btn btn-accent" id="btn-cross-confirm">Agregar de todos modos</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================================
+// ESTADO
+// ============================================================================
+const STORE_KEY = 'odoo_routes_v3';
+const CONFIG_KEY = 'odoo_config_v1';
+const GEO_KEY = 'odoo_geocache_v1';
+const ZONES_KEY = 'odoo_zones_v1';
+const ORS_KEY = 'odoo_ors_key_v1';
+const ROUTE_CACHE_KEY = 'odoo_route_cache_v1';
+
+const DEFAULT_ZONES = {
+  "AMBA": {
+    "children": {
+      "CABA": {
+        "cities": ["caba", "capital federal", "ciudad autonoma de buenos aires", "buenos aires", "ciudad de buenos aires", "c.a.b.a", "ciudad de bs as", "bs as"]
+      },
+      "GBA Norte": {
+        "cities": ["san isidro", "tigre", "vicente lopez", "san fernando", "olivos", "martinez", "beccar", "boulogne", "acassuso", "florida", "munro", "carapachay", "villa adelina", "nordelta", "rincon de milberg", "benavidez", "general pacheco", "don torcuato"]
+      },
+      "GBA Oeste": {
+        "cities": ["moron", "haedo", "hurlingham", "ituzaingo", "merlo", "moreno", "general rodriguez", "la matanza", "ramos mejia", "san justo", "villa luzuriaga", "lomas del mirador", "ciudadela", "san martin", "general san martin", "tres de febrero", "caseros", "san miguel", "jose c paz", "malvinas argentinas", "los polvorines"]
+      },
+      "GBA Sur": {
+        "cities": ["avellaneda", "lanus", "lomas de zamora", "quilmes", "berazategui", "florencio varela", "almirante brown", "esteban echeverria", "ezeiza", "presidente peron", "san vicente", "monte grande", "luis guillon", "longchamps", "burzaco", "adrogue", "banfield", "temperley", "remedios de escalada", "wilde", "sarandi", "dock sud", "bernal", "don bosco"]
+      }
+    }
+  },
+  "Buenos Aires (Interior)": {
+    "states": ["Buenos Aires (AR)"]
+  },
+  "Córdoba": {
+    "states": ["Córdoba (AR)"]
+  },
+  "Santa Fe": {
+    "states": ["Santa Fe (AR)"]
+  },
+  "Resto": {
+    "default": true
+  }
+};
+
+let config = JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null');
+let store = JSON.parse(localStorage.getItem(STORE_KEY) || JSON.stringify({
+  routes: {}, stops: {}, available: []
+}));
+let geoCache = JSON.parse(localStorage.getItem(GEO_KEY) || '{}');
+let zones = JSON.parse(localStorage.getItem(ZONES_KEY) || JSON.stringify(DEFAULT_ZONES));
+let orsKey = localStorage.getItem(ORS_KEY) || '';
+let routeCache = JSON.parse(localStorage.getItem(ROUTE_CACHE_KEY) || '{}');
+
+let currentRouteId = null;
+let selectedZonePath = null; // ej: "AMBA / GBA Sur" o null = todas
+let collapsedZones = new Set(); // paths colapsados
+let uid = null;
+let miniMap = null;
+let miniMapMarkers = [];
+let miniMapPolyline = null;
+
+// ============================================================================
+// UTILS
+// ============================================================================
+function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+function saveConfig() { localStorage.setItem(CONFIG_KEY, JSON.stringify(config)); }
+function saveGeo() { localStorage.setItem(GEO_KEY, JSON.stringify(geoCache)); }
+function saveZones() { localStorage.setItem(ZONES_KEY, JSON.stringify(zones)); }
+function saveOrsKey() { localStorage.setItem(ORS_KEY, orsKey); }
+function saveRouteCache() { localStorage.setItem(ROUTE_CACHE_KEY, JSON.stringify(routeCache)); }
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function decodeHtml(s) {
+  // Decodifica entidades HTML como &#209; → Ñ, &amp; → &, etc.
+  if (s === null || s === undefined) return '';
+  const txt = document.createElement('textarea');
+  txt.innerHTML = String(s);
+  return txt.value;
+}
+function showToast(msg, type = 'info', duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function setStatus(state, text, meta = '') {
+  document.getElementById('status-bar').className = 'status-bar ' + state;
+  document.getElementById('status-text').textContent = text;
+  document.getElementById('status-meta').textContent = meta;
+}
+function newId() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function normalize(s) {
+  if (!s) return '';
+  return s.toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // sin tildes
+    .replace(/\./g, '')
+    .trim();
+}
+
+// ============================================================================
+// ZONAS
+// ============================================================================
+function getPickingZonePath(picking) {
+  // Devuelve el path de la zona, ej: "AMBA / GBA Sur" o "Resto"
+  // Robusto: maneja pickings sin state o sin city
+  const cityNorm = normalize(picking?.city || '');
+  const stateNorm = normalize(picking?.state || '');
+
+  function search(node, path) {
+    if (!node || typeof node !== 'object') return null;
+    for (const [name, def] of Object.entries(node)) {
+      if (!def || typeof def !== 'object') continue;
+      const cur = path ? path + ' / ' + name : name;
+      // Match por children primero (más específico)
+      if (def.children) {
+        const childMatch = search(def.children, cur);
+        if (childMatch) return childMatch;
+      }
+      // Match por city
+      if (def.cities && Array.isArray(def.cities) && cityNorm) {
+        if (def.cities.some(c => cityNorm === normalize(c) || cityNorm.includes(normalize(c)))) {
+          return cur;
+        }
+      }
+      // Match por state
+      if (def.states && Array.isArray(def.states) && stateNorm) {
+        if (def.states.some(s => stateNorm === normalize(s) || stateNorm.includes(normalize(s)))) {
+          return cur;
+        }
+      }
+    }
+    return null;
+  }
+
+  const match = search(zones, '');
+  if (match) return match;
+
+  // Buscar zona default
+  function findDefault(node, path) {
+    if (!node || typeof node !== 'object') return null;
+    for (const [name, def] of Object.entries(node)) {
+      if (!def || typeof def !== 'object') continue;
+      const cur = path ? path + ' / ' + name : name;
+      if (def.default) return cur;
+      if (def.children) {
+        const c = findDefault(def.children, cur);
+        if (c) return c;
+      }
+    }
+    return null;
+  }
+  return findDefault(zones, '') || 'Sin zona';
+}
+
+function getZoneCounts() {
+  // Cuenta pickings disponibles por zona path completo
+  const counts = {};
+  store.available.forEach(p => {
+    const z = p.zone || getPickingZonePath(p);
+    counts[z] = (counts[z] || 0) + 1;
+  });
+  return counts;
+}
+
+function buildZoneTreeHTML(node, parentPath = '', counts = {}) {
+  const entries = Object.entries(node);
+  return entries.map(([name, def]) => {
+    const fullPath = parentPath ? parentPath + ' / ' + name : name;
+    // Sumar conteos de descendientes
+    let count = counts[fullPath] || 0;
+    function sumDescendants(d, p) {
+      if (d.children) {
+        for (const [cn, cdef] of Object.entries(d.children)) {
+          const cp = p + ' / ' + cn;
+          count += counts[cp] || 0;
+          sumDescendants(cdef, cp);
+        }
+      }
+    }
+    sumDescendants(def, fullPath);
+
+    const hasChildren = def.children && Object.keys(def.children).length > 0;
+    const isCollapsed = collapsedZones.has(fullPath);
+    const isSelected = selectedZonePath === fullPath;
+    const toggleSymbol = hasChildren ? (isCollapsed ? '▶' : '▼') : '';
+
+    return `
+      <div class="zone-node">
+        <div class="zone-row ${isSelected ? 'selected' : ''}" data-path="${escapeHtml(fullPath)}">
+          <span class="zone-toggle ${hasChildren ? '' : 'invisible'}" data-toggle="${escapeHtml(fullPath)}">${toggleSymbol}</span>
+          <span class="zone-name">${escapeHtml(name)}</span>
+          <span class="zone-count">${count}</span>
+        </div>
+        ${hasChildren ? `<div class="zone-children ${isCollapsed ? 'collapsed' : ''}">${buildZoneTreeHTML(def.children, fullPath, counts)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderZoneTree() {
+  const counts = getZoneCounts();
+  const html = buildZoneTreeHTML(zones, '', counts);
+  // Agregar "Sin zona" si hay pickings huérfanos
+  const sinZona = counts['Sin zona'] || 0;
+  const finalHtml = html + (sinZona > 0 ? `
+    <div class="zone-node">
+      <div class="zone-row ${selectedZonePath === 'Sin zona' ? 'selected' : ''}" data-path="Sin zona">
+        <span class="zone-toggle invisible"></span>
+        <span class="zone-name" style="color:var(--ink-faded);font-style:italic">Sin zona asignada</span>
+        <span class="zone-count">${sinZona}</span>
+      </div>
+    </div>` : '');
+  document.getElementById('zone-tree').innerHTML = finalHtml;
+
+  // Listeners
+  document.querySelectorAll('.zone-row').forEach(row => {
+    row.addEventListener('click', e => {
+      // Si clickeó el toggle, no selecciona, solo expand/collapse
+      if (e.target.dataset.toggle) {
+        const path = e.target.dataset.toggle;
+        if (collapsedZones.has(path)) collapsedZones.delete(path);
+        else collapsedZones.add(path);
+        renderZoneTree();
+        return;
+      }
+      const path = row.dataset.path;
+      selectedZonePath = (selectedZonePath === path) ? null : path;
+      renderZoneTree();
+      renderAvailable();
+    });
+  });
+}
+
+function pickingMatchesSelectedZone(picking) {
+  if (!selectedZonePath) return true;
+  const pZone = picking.zone || getPickingZonePath(picking);
+  // Si el seleccionado es ancestro o igual, matchea
+  return pZone === selectedZonePath || pZone.startsWith(selectedZonePath + ' / ');
+}
+
+function getRouteZoneSummary(route) {
+  // Devuelve {dominant: "X", isMixed: bool, breakdown: {zone: count}}
+  const stops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  if (stops.length === 0) return { dominant: '—', isMixed: false, breakdown: {} };
+  const breakdown = {};
+  stops.forEach(s => {
+    const z = s.zone || 'Sin zona';
+    breakdown[z] = (breakdown[z] || 0) + 1;
+  });
+  const sorted = Object.entries(breakdown).sort((a, b) => b[1] - a[1]);
+  const dominant = sorted[0][0];
+  // Si hay zonas distintas a nivel raíz, es mixta
+  const roots = new Set(Object.keys(breakdown).map(z => z.split(' / ')[0]));
+  return { dominant, isMixed: roots.size > 1, breakdown };
+}
+
+// Migrar datos existentes con entidades HTML escapadas
+(function migrateOldData() {
+  let changed = false;
+  Object.values(store.stops).forEach(s => {
+    ['partner', 'address', 'city', 'state', 'addressForGeo'].forEach(field => {
+      if (s[field] && typeof s[field] === 'string' && s[field].includes('&#')) {
+        s[field] = decodeHtml(s[field]);
+        changed = true;
+      }
+    });
+  });
+  store.available.forEach(p => {
+    ['partner', 'address', 'city', 'state', 'addressForGeo'].forEach(field => {
+      if (p[field] && typeof p[field] === 'string' && p[field].includes('&#')) {
+        p[field] = decodeHtml(p[field]);
+        changed = true;
+      }
+    });
+  });
+  if (changed) {
+    saveStore();
+    console.log('✓ Datos migrados (entidades HTML decodificadas)');
+  }
+})();
+
+// ============================================================================
+// ODOO
+// ============================================================================
+async function odooCall(service, method, args) {
+  if (!config) throw new Error('Sin configuración');
+  const res = await fetch(config.url + '/jsonrpc', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', method: 'call', params: { service, method, args } })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.data?.message || data.error.message || 'Error de Odoo');
+  return data.result;
+}
+
+async function odooAuth() {
+  uid = await odooCall('common', 'authenticate', [config.db, config.username, config.apikey, {}]);
+  if (!uid) throw new Error('Credenciales inválidas');
+  return uid;
+}
+
+async function odooExecute(model, method, args, kwargs = null) {
+  if (!uid) await odooAuth();
+  const fullArgs = [config.db, uid, config.apikey, model, method, args];
+  if (kwargs) fullArgs.push(kwargs);
+  return odooCall('object', 'execute_kw', fullArgs);
+}
+
+// ============================================================================
+// GEOCODING
+// ============================================================================
+function geoCacheKey(stop) { return `pid_${stop.pickingId}`; }
+
+async function geocodeAddress(addressStr) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&q=${encodeURIComponent(addressStr)}`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+  if (!res.ok) throw new Error('Nominatim error ' + res.status);
+  const data = await res.json();
+  if (data.length === 0) return null;
+  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name };
+}
+
+async function geocodeWithFallback(stop) {
+  // Intenta varias estrategias hasta encontrar coordenadas:
+  // 1. Dirección completa (calle + ciudad + zip)
+  // 2. Solo calle + ciudad (sin zip)
+  // 3. Solo ciudad + provincia
+  // 4. Solo ciudad + Argentina
+  const street = decodeHtml(stop.address || '').replace(/sin dirección/i, '').trim();
+  const city = decodeHtml(stop.city || '').replace(/sin ciudad/i, '').trim();
+  const state = decodeHtml(stop.state || '').replace(' (AR)', '').trim();
+
+  const attempts = [];
+  if (stop.addressForGeo) attempts.push({ q: decodeHtml(stop.addressForGeo), method: 'completa' });
+  if (street && city) attempts.push({ q: `${street}, ${city}, Argentina`, method: 'calle+ciudad' });
+  if (city && state) attempts.push({ q: `${city}, ${state}, Argentina`, method: 'ciudad+provincia' });
+  if (city) attempts.push({ q: `${city}, Argentina`, method: 'solo ciudad' });
+
+  for (const attempt of attempts) {
+    if (!attempt.q || attempt.q.length < 5) continue;
+    try {
+      const result = await geocodeAddress(attempt.q);
+      if (result) {
+        result.method = attempt.method;
+        result.query = attempt.q;
+        return result;
+      }
+    } catch (err) {
+      console.warn('Geocoding error:', err);
+    }
+    await sleep(1100); // rate limit Nominatim
+  }
+  return null;
+}
+
+function buildAddressForGeo(stop) {
+  // Retrocompatible: si no tiene addressForGeo, lo arma a partir de address/city/zip
+  if (stop.addressForGeo) return stop.addressForGeo;
+  const parts = [];
+  if (stop.address && stop.address !== 'Sin dirección') parts.push(stop.address);
+  if (stop.city && stop.city !== 'Sin ciudad' && !parts.join(' ').includes(stop.city)) parts.push(stop.city);
+  parts.push('Argentina');
+  return parts.filter(Boolean).join(', ');
+}
+
+async function geocodeRoute(routeId) {
+  const route = store.routes[routeId];
+  if (!route) return;
+  const stops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  if (stops.length === 0) { showToast('Sin paradas', 'error'); return; }
+  const pendientes = stops.filter(s => !geoCache[geoCacheKey(s)]);
+  if (pendientes.length === 0) { showToast('Todas las paradas ya tienen coordenadas ✓', 'success'); renderStops(); return; }
+
+  showToast(`Geocodificando ${pendientes.length} dirección(es)...`, 'info', 60000);
+  let ok = 0, approx = 0, fail = 0;
+  for (const stop of pendientes) {
+    try {
+      const result = await geocodeWithFallback(stop);
+      if (result) {
+        geoCache[geoCacheKey(stop)] = result;
+        saveGeo();
+        if (result.method === 'completa' || result.method === 'calle+ciudad') ok++;
+        else approx++;  // solo ciudad → aproximado
+      } else {
+        fail++;
+      }
+    } catch (err) { fail++; console.error(err); }
+  }
+  const parts = [];
+  if (ok) parts.push(`${ok} exactas ✓`);
+  if (approx) parts.push(`${approx} aprox. ⚠`);
+  if (fail) parts.push(`${fail} fallaron ✕`);
+  showToast(`Geocoding: ${parts.join(' · ')}`, ok > 0 || approx > 0 ? 'success' : 'error', 5000);
+  renderStops();
+}
+
+// ============================================================================
+// OPTIMIZACIÓN
+// ============================================================================
+function haversine(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLon = (b.lon - a.lon) * Math.PI / 180;
+  const lat1 = a.lat * Math.PI / 180;
+  const lat2 = b.lat * Math.PI / 180;
+  const aa = Math.sin(dLat/2) ** 2 + Math.sin(dLon/2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return R * 2 * Math.asin(Math.sqrt(aa));
+}
+
+function optimizeRoute(routeId) {
+  const route = store.routes[routeId];
+  if (!route) return;
+  const stops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  const geocoded = stops.filter(s => geoCache[geoCacheKey(s)]);
+  const noGeo = stops.filter(s => !geoCache[geoCacheKey(s)]);
+
+  if (geocoded.length < 2) { showToast('Necesitás al menos 2 paradas geocodificadas', 'error'); return; }
+
+  let startPoint = route.originGeo || geoCache[geoCacheKey(geocoded[0])];
+
+  const ordered = [];
+  const remaining = [...geocoded];
+  let current = startPoint;
+  while (remaining.length > 0) {
+    let bestIdx = 0, bestDist = Infinity;
+    for (let i = 0; i < remaining.length; i++) {
+      const c = geoCache[geoCacheKey(remaining[i])];
+      const d = haversine(current, c);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    const next = remaining.splice(bestIdx, 1)[0];
+    ordered.push(next);
+    current = geoCache[geoCacheKey(next)];
+  }
+  route.stops = [...ordered.map(s => s.id), ...noGeo.map(s => s.id)];
+  saveStore();
+
+  let total = 0;
+  let prev = startPoint;
+  ordered.forEach(s => { const c = geoCache[geoCacheKey(s)]; total += haversine(prev, c); prev = c; });
+
+  showToast(`Ruta optimizada · ~${total.toFixed(1)} km` + (noGeo.length ? ` · ${noGeo.length} sin geo` : ''), 'success', 5000);
+  renderStops();
+}
+
+// ============================================================================
+// CARGA
+// ============================================================================
+async function loadAvailablePickings() {
+  setStatus('connected', 'Cargando pickings...', '');
+  try {
+    const pickings = await odooExecute('stock.picking', 'search_read', [
+      [['state', 'in', ['assigned', 'confirmed']], ['picking_type_id', '=', config.ptype]],
+      ['id', 'name', 'partner_id', 'origin', 'scheduled_date', 'state']
+    ], { limit: 500, order: 'scheduled_date asc' });
+
+    if (!pickings.length) { store.available = []; saveStore(); setStatus('connected', 'Conectado', '0 disponibles'); renderAll(); return; }
+
+    const partnerIds = [...new Set(pickings.map(p => p.partner_id?.[0]).filter(Boolean))];
+    const partners = await odooExecute('res.partner', 'read', [partnerIds], {
+      fields: ['id', 'display_name', 'street', 'street2', 'city', 'zip', 'state_id', 'phone', 'mobile', 'email', 'partner_latitude', 'partner_longitude']
+    });
+    const pmap = Object.fromEntries(partners.map(p => [p.id, p]));
+
+    const inRoutes = new Set(Object.values(store.stops).map(s => s.pickingId));
+    let autoCached = 0;
+    store.available = pickings
+      .filter(pk => !inRoutes.has(pk.id))
+      .map(pk => {
+        const partner = pk.partner_id ? pmap[pk.partner_id[0]] : null;
+        // Decodificar entidades HTML (Cañuelas viene como "Ca&#209;uelas")
+        const street = decodeHtml(partner?.street || '');
+        const street2 = decodeHtml(partner?.street2 || '');
+        const city = decodeHtml(partner?.city || '');
+        const zip = decodeHtml(partner?.zip || '');
+        const state = partner?.state_id ? decodeHtml(partner.state_id[1]) : '';
+        const partnerName = decodeHtml(partner?.display_name || pk.partner_id?.[1] || '(sin contacto)');
+        const addr = [street, street2 && `, ${street2}`, city && ` · ${city}`, zip && ` ${zip}`].filter(Boolean).join('');
+        const addressForGeo = [street, city, zip, 'Argentina'].filter(Boolean).join(', ');
+        const hasAddress = !!(street || city);
+
+        // Si Odoo tiene coordenadas válidas, las usamos directamente (sin Nominatim)
+        const odooLat = partner?.partner_latitude;
+        const odooLon = partner?.partner_longitude;
+        const hasOdooCoords = odooLat && odooLon && Math.abs(odooLat) > 0.01 && Math.abs(odooLon) > 0.01;
+        if (hasOdooCoords) {
+          const cacheKey = `pid_${pk.id}`;
+          if (!geoCache[cacheKey]) {
+            geoCache[cacheKey] = { lat: odooLat, lon: odooLon, source: 'odoo', method: 'odoo' };
+            autoCached++;
+          }
+        }
+
+        const obj = {
+          pickingId: pk.id, pickingName: pk.name,
+          partner: partnerName,
+          address: addr || 'Sin dirección', addressForGeo, hasAddress,
+          city: city || 'Sin ciudad', state,
+          phone: partner?.phone || partner?.mobile || '',
+          email: partner?.email || '',
+          scheduledDate: pk.scheduled_date?.substring(0, 16) || '',
+          origin: pk.origin || '',
+          state_picking: pk.state,
+          hasOdooCoords
+        };
+        obj.zone = getPickingZonePath(obj);
+        return obj;
+      });
+
+    if (autoCached > 0) {
+      saveGeo();
+      console.log(`✓ ${autoCached} coordenadas cargadas desde Odoo`);
+    }
+
+    saveStore();
+    const odooCoordsCount = store.available.filter(p => p.hasOdooCoords).length;
+    const statusMeta = `${store.available.length} disponibles · ${Object.keys(store.routes).length} rutas` + (odooCoordsCount > 0 ? ` · 📍 ${odooCoordsCount} con coords de Odoo` : '');
+    setStatus('connected', 'Conectado', statusMeta);
+    renderAll();
+  } catch (err) {
+    setStatus('error', 'Error', err.message);
+    showToast('Error: ' + err.message, 'error');
+    console.error(err);
+  }
+}
+
+// ============================================================================
+// RENDER
+// ============================================================================
+function renderAvailable() {
+  const zone = document.getElementById('zone-available');
+  const search = document.getElementById('search-available').value.toLowerCase().trim();
+  const hideNoAddr = document.getElementById('hide-no-address')?.checked || false;
+  let items = store.available;
+  if (selectedZonePath) items = items.filter(pickingMatchesSelectedZone);
+  if (hideNoAddr) items = items.filter(p => p.hasAddress !== false);
+  if (search) items = items.filter(p => Object.values(p).join(' ').toLowerCase().includes(search));
+
+  // Contador de sin dirección (sobre todos, no solo filtrados)
+  const noAddrCount = store.available.filter(p => p.hasAddress === false).length;
+  const noAddrEl = document.getElementById('no-addr-count');
+  if (noAddrEl) noAddrEl.textContent = noAddrCount > 0 ? `${noAddrCount} ⚠` : '';
+
+  document.getElementById('count-available').textContent = `${items.length} de ${store.available.length}`;
+  if (items.length === 0) {
+    zone.innerHTML = '<div class="empty">' + (selectedZonePath ? `Sin pickings en "${escapeHtml(selectedZonePath)}"` : 'No hay pickings disponibles') + '</div>';
+    return;
+  }
+  zone.innerHTML = items.map(p => {
+    const zoneShort = (p.zone || '').split(' / ').pop();
+    return `
+    <div class="picking-card state-${p.state_picking} ${!p.hasAddress ? 'no-address' : ''}" draggable="true" data-picking-id="${p.pickingId}">
+      <div class="pc-top">
+        <span class="pc-id">${escapeHtml(p.pickingName)}</span>
+        <span class="pc-pill ${p.state_picking}">${p.state_picking === 'assigned' ? 'Reservado' : 'Confirm.'}</span>
+      </div>
+      <div class="pc-client">${escapeHtml(p.partner)}</div>
+      <div class="pc-meta ${!p.hasAddress ? 'no-addr' : ''}">${p.hasAddress ? escapeHtml(p.address) : '⚠ Sin dirección'}</div>
+      <div style="margin-top:5px">
+        ${zoneShort ? `<span class="pc-tag zone">${escapeHtml(zoneShort)}</span>` : ''}
+        ${p.scheduledDate ? `<span class="pc-tag">${escapeHtml(p.scheduledDate.substring(0,10))}</span>` : ''}
+        ${!p.hasAddress ? `<span class="pc-tag" style="background:var(--red-soft);color:var(--red);border-color:var(--red-soft);font-weight:600">SIN DIR</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  attachDragHandlers();
+}
+
+function renderRoutes() {
+  const zoneEl = document.getElementById('zone-routes');
+  const routes = Object.values(store.routes);
+  document.getElementById('count-routes').textContent = `${routes.length} ${routes.length === 1 ? 'ruta' : 'rutas'}`;
+  if (routes.length === 0) { zoneEl.innerHTML = '<div class="empty">Crea tu primera ruta</div>'; return; }
+  zoneEl.innerHTML = routes.map(r => {
+    const stops = r.stops.map(sid => store.stops[sid]).filter(Boolean);
+    const counts = { pendiente: 0, entregado: 0, rechazado: 0, reprogramado: 0 };
+    stops.forEach(s => counts[s.status] = (counts[s.status] || 0) + 1);
+    const total = stops.length;
+    const done = counts.entregado;
+    const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const isComplete = total > 0 && counts.pendiente === 0;
+    const zsum = getRouteZoneSummary(r);
+    const zoneLabel = stops.length === 0 ? '' : (zsum.isMixed ? `📍 Mixta: ${Object.entries(zsum.breakdown).map(([z,c]) => `${z.split(' / ').pop()} (${c})`).join(' + ')}` : `📍 ${zsum.dominant.split(' / ').pop()}`);
+    return `
+      <div class="route-card ${r.id === currentRouteId ? 'active' : ''} ${isComplete ? 'complete' : ''}" data-route-id="${r.id}">
+        <div class="rc-top">
+          <div class="rc-name">${escapeHtml(r.name)} ${isComplete ? '<span style="font-size:13px;color:var(--green)">✓</span>' : ''}</div>
+        </div>
+        <div class="rc-meta">${escapeHtml(r.driver || 'sin chofer')} · ${escapeHtml(r.date || 'sin fecha')}</div>
+        ${zoneLabel ? `<div class="rc-zone ${zsum.isMixed ? 'mixed' : ''}">${escapeHtml(zoneLabel)}</div>` : ''}
+        ${total > 0 ? `<div class="rc-progress"><div class="rc-progress-bar" style="width:${progressPct}%"></div></div>` : ''}
+        <div class="rc-stats">
+          ${counts.pendiente ? `<span class="rc-stat pendiente">${counts.pendiente} pend</span>` : ''}
+          ${counts.entregado ? `<span class="rc-stat entregado">${counts.entregado} entr</span>` : ''}
+          ${counts.rechazado ? `<span class="rc-stat rechazado">${counts.rechazado} rech</span>` : ''}
+          ${counts.reprogramado ? `<span class="rc-stat reprogramado">${counts.reprogramado} reprog</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  document.querySelectorAll('.route-card').forEach(el => {
+    el.addEventListener('click', () => selectRoute(el.dataset.routeId));
+  });
+}
+
+function renderStops() {
+  const zoneEl = document.getElementById('zone-stops');
+  const titleEl = document.getElementById('route-detail-title');
+  const metaEl = document.getElementById('route-detail-meta');
+  const actionsEl = document.getElementById('route-actions');
+
+  if (!currentRouteId || !store.routes[currentRouteId]) {
+    titleEl.textContent = 'Selecciona una ruta';
+    metaEl.textContent = '—';
+    actionsEl.style.display = 'none';
+    zoneEl.innerHTML = '<div class="empty">Arrastrá pickings desde "Disponibles" para armar una ruta</div>';
+
+    return;
+  }
+
+  const route = store.routes[currentRouteId];
+  const zsum = getRouteZoneSummary(route);
+  titleEl.textContent = route.name;
+  const stopsAll = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  const counts = { pendiente: 0, entregado: 0, rechazado: 0, reprogramado: 0 };
+  stopsAll.forEach(s => counts[s.status] = (counts[s.status] || 0) + 1);
+  const progressLabel = stopsAll.length > 0
+    ? `${counts.pendiente} pend · ${counts.entregado} entr` + (counts.rechazado ? ` · ${counts.rechazado} rech` : '') + (counts.reprogramado ? ` · ${counts.reprogramado} reprog` : '')
+    : 'sin paradas';
+  const zoneLabel = route.stops.length === 0 ? '' : (zsum.isMixed ? `Mixta · ${Object.keys(zsum.breakdown).map(z=>z.split(' / ').pop()).join(' + ')}` : zsum.dominant);
+  metaEl.textContent = `${route.driver || 'sin chofer'} · ${route.date || 'sin fecha'} · ${progressLabel}` + (zoneLabel ? ` · 📍 ${zoneLabel}` : '');
+  actionsEl.style.display = 'flex';
+
+  const stops = stopsAll;
+  if (stops.length === 0) {
+    zoneEl.innerHTML = '<div class="empty">Arrastrá pickings acá</div>';
+
+    return;
+  }
+
+  zoneEl.innerHTML = stops.map((s, i) => {
+    const geo = geoCache[geoCacheKey(s)];
+    return `
+      <div class="stop-card s-${s.status}" data-stop-id="${s.id}">
+        <div class="stop-top">
+          <span><span class="stop-order">${i + 1}</span><span class="stop-id">${escapeHtml(s.pickingName)}</span></span>
+          <span class="stop-status ${s.status}">${escapeHtml(s.status)}</span>
+        </div>
+        <div class="pc-client">${escapeHtml(s.partner)}</div>
+        <div class="pc-meta">${escapeHtml(s.address)}</div>
+        ${s.phone ? `<div class="pc-meta">☎ ${escapeHtml(s.phone)}</div>` : ''}
+        ${s.zone ? `<div style="margin-top:4px"><span class="pc-tag zone">${escapeHtml(s.zone.split(' / ').pop())}</span></div>` : ''}
+        ${s.reason ? `<div class="pc-meta" style="color:var(--red);margin-top:4px">⚠ ${escapeHtml(s.reason)}</div>` : ''}
+        <div class="stop-geo ${geo ? '' : 'no-geo'}">${geo ? `📍 ${geo.lat.toFixed(4)}, ${geo.lon.toFixed(4)}${geo.source === 'odoo' ? ' <span style="color:var(--green);font-weight:700">· ODOO</span>' : (geo.method && geo.method !== 'completa' ? ` <span style="color:var(--amber);font-weight:700">· APROX (${geo.method})</span>` : '')}` : '⚠ sin coordenadas'} <button class="action-btn" data-action="edit-address" data-stop-id="${s.id}" style="padding: 2px 6px; font-size: 9px; margin-left: 6px; background: var(--bg); flex: none; min-width: 0;">✏ Editar dir.</button></div>
+        <div class="stop-actions">
+          ${s.status === 'pendiente' ? `
+            <button class="action-btn entregar" data-action="entregar" data-stop-id="${s.id}">✓ Entregar</button>
+            <button class="action-btn rechazar" data-action="rechazar" data-stop-id="${s.id}">✕ Rechazar</button>
+            <button class="action-btn reprogramar" data-action="reprogramar" data-stop-id="${s.id}">↻ Reprog.</button>
+          ` : `
+            <button class="action-btn deshacer" data-action="deshacer" data-stop-id="${s.id}">↩ Deshacer</button>
+          `}
+        </div>
+      </div>`;
+  }).join('');
+  attachStopActions();
+
+}
+
+function renderAll() {
+  renderZoneTree();
+  renderAvailable();
+  renderRoutes();
+  renderStops();
+}
+
+// ============================================================================
+// ROUTING (OpenRouteService)
+// ============================================================================
+async function getRoadRoute(coordinates) {
+  // coordinates: array de [lon, lat] en orden de visita
+  if (!orsKey) throw new Error('Falta API key de OpenRouteService');
+  if (coordinates.length < 2) throw new Error('Necesitás al menos 2 puntos');
+
+  // Cache key basada en coordenadas
+  const cacheKey = coordinates.map(c => `${c[0].toFixed(4)},${c[1].toFixed(4)}`).join('|');
+  if (routeCache[cacheKey]) return routeCache[cacheKey];
+
+  const url = 'https://api.openrouteservice.org/v2/directions/driving-car/geojson';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': orsKey,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json, application/geo+json'
+    },
+    body: JSON.stringify({
+      coordinates,
+      instructions: false,
+      preference: 'recommended'
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`ORS error ${res.status}: ${errText.substring(0, 200)}`);
+  }
+
+  const data = await res.json();
+  if (!data.features || data.features.length === 0) throw new Error('Sin ruta encontrada');
+
+  const feature = data.features[0];
+  const result = {
+    geometry: feature.geometry,  // GeoJSON LineString
+    distance: feature.properties.summary.distance,  // metros
+    duration: feature.properties.summary.duration,  // segundos
+    cachedAt: new Date().toISOString()
+  };
+
+  routeCache[cacheKey] = result;
+  saveRouteCache();
+  return result;
+}
+
+function formatDistance(meters) {
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
+function formatDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}min`;
+  return `${m} min`;
+}
+
+// ============================================================================
+// GOOGLE MAPS — abrir ruta sin API key (URL pública)
+// ============================================================================
+function openInGoogleMaps(routeId) {
+  const route = store.routes[routeId];
+  if (!route) return;
+
+  // Solo paradas pendientes con coordenadas
+  const allStops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  const pending = allStops.filter(s => s.status === 'pendiente');
+  const geocoded = pending.filter(s => geoCache[geoCacheKey(s)]);
+
+  if (geocoded.length === 0) {
+    if (allStops.length === 0) {
+      showToast('Sin paradas en la ruta', 'error');
+    } else if (pending.length === 0) {
+      showToast('🎉 Ruta completada — no hay paradas pendientes', 'success');
+    } else {
+      showToast('Las paradas pendientes no tienen coordenadas. Geocodificá primero.', 'error');
+    }
+    return;
+  }
+
+  // Google Maps URL acepta máx 10 puntos: 1 origen + 8 waypoints + 1 destino
+  // Si hay más, recortamos y avisamos
+  const MAX_POINTS = 10;
+  let points = geocoded;
+  let truncated = false;
+  if (geocoded.length > MAX_POINTS) {
+    points = geocoded.slice(0, MAX_POINTS);
+    truncated = true;
+  }
+
+  // Si hay punto de partida en la ruta, usarlo como origin
+  const params = new URLSearchParams();
+  params.set('api', '1');
+  params.set('travelmode', 'driving');
+
+  let originGeo = route.originGeo;
+  let destinationStop, waypointStops;
+
+  if (originGeo) {
+    // Origen = depósito; destino = última parada; waypoints = el resto
+    destinationStop = points[points.length - 1];
+    waypointStops = points.slice(0, -1);
+    params.set('origin', `${originGeo.lat},${originGeo.lon}`);
+  } else {
+    // Origen = primera parada; destino = última; waypoints = del medio
+    if (points.length === 1) {
+      params.set('destination', `${points[0].geo ? points[0].geo.lat : geoCache[geoCacheKey(points[0])].lat},${points[0].geo ? points[0].geo.lon : geoCache[geoCacheKey(points[0])].lon}`);
+      const url = 'https://www.google.com/maps/dir/?' + params.toString();
+      window.open(url, '_blank');
+      return;
+    }
+    const firstGeo = geoCache[geoCacheKey(points[0])];
+    params.set('origin', `${firstGeo.lat},${firstGeo.lon}`);
+    destinationStop = points[points.length - 1];
+    waypointStops = points.slice(1, -1);
+  }
+
+  // Destination
+  const destGeo = geoCache[geoCacheKey(destinationStop)];
+  params.set('destination', `${destGeo.lat},${destGeo.lon}`);
+
+  // Waypoints
+  if (waypointStops.length > 0) {
+    const wpStr = waypointStops.map(s => {
+      const g = geoCache[geoCacheKey(s)];
+      return `${g.lat},${g.lon}`;
+    }).join('|');
+    params.set('waypoints', wpStr);
+  }
+
+  const url = 'https://www.google.com/maps/dir/?' + params.toString();
+  window.open(url, '_blank');
+
+  if (truncated) {
+    showToast(`⚠ Google Maps acepta máximo 10 paradas. Se abrieron las primeras ${MAX_POINTS} de ${geocoded.length}.`, 'error', 6000);
+  } else {
+    showToast(`🗺️ Abriendo ${geocoded.length} paradas en Google Maps`, 'success');
+  }
+}
+
+// ============================================================================
+// MAPA FULLSCREEN
+// ============================================================================
+let fsMap = null;
+let fsMarkers = [];
+let fsPolyline = null;
+
+function ensureFsMap() {
+  if (fsMap) return fsMap;
+  const el = document.getElementById('fullscreen-map');
+  fsMap = L.map(el, { zoomControl: true }).setView([-34.6, -58.4], 11);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(fsMap);
+  return fsMap;
+}
+
+function clearFsMapLayers() {
+  if (!fsMap) return;
+  fsMarkers.forEach(m => fsMap.removeLayer(m));
+  fsMarkers = [];
+  if (fsPolyline) { fsMap.removeLayer(fsPolyline); fsPolyline = null; }
+}
+
+function openFullscreenMap() {
+  if (!currentRouteId) return;
+  const route = store.routes[currentRouteId];
+  if (!route) return;
+  const allStops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+
+  // SOLO pendientes para el mapa (las entregadas/rechazadas/reprogramadas desaparecen)
+  const stops = allStops.filter(s => s.status === 'pendiente');
+  const totalStops = allStops.length;
+  const counts = { entregado: 0, rechazado: 0, reprogramado: 0, pendiente: 0 };
+  allStops.forEach(s => counts[s.status] = (counts[s.status] || 0) + 1);
+
+  const zsum = getRouteZoneSummary(route);
+  document.getElementById('fs-title').textContent = route.name;
+  const zoneLabel = stops.length === 0 ? '' : (zsum.isMixed ? 'Mixta' : zsum.dominant);
+  const progressLabel = `${counts.pendiente} pend · ${counts.entregado} entr` + (counts.rechazado ? ` · ${counts.rechazado} rech` : '') + (counts.reprogramado ? ` · ${counts.reprogramado} reprog` : '');
+  const baseMeta = `${route.driver || 'sin chofer'} · ${route.date || 'sin fecha'} · ${progressLabel}` + (zoneLabel ? ` · 📍 ${zoneLabel}` : '');
+  document.getElementById('fs-meta').textContent = baseMeta;
+
+  // Lista lateral — solo pendientes
+  const listEl = document.getElementById('fs-list');
+  if (stops.length === 0) {
+    if (totalStops > 0) {
+      listEl.innerHTML = `<div class="empty">✓ Ruta completa<br><span style="font-size:11px;color:var(--ink-faded)">${counts.entregado} entregadas · ${counts.rechazado} rechazadas · ${counts.reprogramado} reprogramadas</span></div>`;
+    } else {
+      listEl.innerHTML = '<div class="empty">Sin paradas</div>';
+    }
+  } else {
+    listEl.innerHTML = stops.map((s, i) => {
+      const geo = geoCache[geoCacheKey(s)];
+      return `
+        <div class="map-fullscreen-stop s-${s.status}" data-stop-id="${s.id}" data-idx="${i}" ${geo ? `data-lat="${geo.lat}" data-lon="${geo.lon}"` : ''}>
+          <span class="num">${i + 1}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700">${escapeHtml(s.pickingName)}</span>
+          <div class="client">${escapeHtml(s.partner)}</div>
+          <div class="addr">${escapeHtml(s.address)}</div>
+          ${!geo ? '<div class="no-geo-warn">⚠ Sin coordenadas</div>' : ''}
+        </div>`;
+    }).join('');
+    listEl.querySelectorAll('.map-fullscreen-stop').forEach(el => {
+      el.addEventListener('click', () => {
+        const lat = parseFloat(el.dataset.lat);
+        const lon = parseFloat(el.dataset.lon);
+        if (!isNaN(lat) && !isNaN(lon)) {
+          fsMap.setView([lat, lon], 16);
+          const idx = parseInt(el.dataset.idx);
+          if (fsMarkers[idx]) fsMarkers[idx].openPopup();
+        }
+      });
+    });
+  }
+
+  document.getElementById('map-fullscreen').classList.add('show');
+
+  setTimeout(async () => {
+    ensureFsMap();
+    fsMap.invalidateSize();
+    clearFsMapLayers();
+
+    const geocoded = stops.map((s, i) => ({ stop: s, idx: i, geo: geoCache[geoCacheKey(s)] })).filter(x => x.geo);
+    if (geocoded.length === 0) return;
+
+    // Markers solo de pendientes, renumerados desde 1
+    fsMarkers = stops.map((s, i) => {
+      const geo = geoCache[geoCacheKey(s)];
+      if (!geo) return null;
+      const icon = L.divIcon({
+        html: `<div class="marker-num">${i + 1}</div>`,
+        className: 'marker-icon-wrapper',
+        iconSize: [28, 28], iconAnchor: [14, 14]
+      });
+      const m = L.marker([geo.lat, geo.lon], { icon }).addTo(fsMap);
+      m.bindPopup(`<strong>${escapeHtml(s.partner)}</strong><br>${escapeHtml(s.address)}<br><small>${escapeHtml(s.pickingName)}${s.phone ? ' · ☎ ' + escapeHtml(s.phone) : ''}</small>`);
+      return m;
+    });
+
+    fsMap.fitBounds(L.latLngBounds(geocoded.map(g => [g.geo.lat, g.geo.lon])), { padding: [40, 40], maxZoom: 14 });
+
+    // Routing real solo con las pendientes
+    if (geocoded.length >= 2) {
+      if (!orsKey) {
+        fsPolyline = L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#c2410c', weight: 3, opacity: 0.5, dashArray: '8,5' }).addTo(fsMap);
+        document.getElementById('fs-meta').textContent = baseMeta + ' · ⚠ Configurá ORS para ver ruta real';
+      } else {
+        const tempLine = L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#c2410c', weight: 2, opacity: 0.3, dashArray: '4,4' }).addTo(fsMap);
+        document.getElementById('fs-meta').textContent = baseMeta + ' · 🛣️ calculando ruta...';
+
+        try {
+          const coords = geocoded.map(g => [g.geo.lon, g.geo.lat]);
+          const routeData = await getRoadRoute(coords);
+          fsMap.removeLayer(tempLine);
+          fsPolyline = L.geoJSON(routeData.geometry, {
+            style: { color: '#c2410c', weight: 5, opacity: 0.8 }
+          }).addTo(fsMap);
+          fsPolyline.bringToBack();
+          fsMap.fitBounds(fsPolyline.getBounds(), { padding: [40, 40], maxZoom: 14 });
+          document.getElementById('fs-meta').textContent = baseMeta + ` · 🛣️ Faltan ${formatDistance(routeData.distance)} · ⏱️ ${formatDuration(routeData.duration)}`;
+        } catch (err) {
+          fsMap.removeLayer(tempLine);
+          fsPolyline = L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#c2410c', weight: 3, opacity: 0.5, dashArray: '8,5' }).addTo(fsMap);
+          document.getElementById('fs-meta').textContent = baseMeta + ' · ⚠ ' + err.message;
+        }
+      }
+    } else if (geocoded.length === 1) {
+      // Solo una pendiente
+      document.getElementById('fs-meta').textContent = baseMeta + ' · 🎯 Última parada';
+    }
+  }, 100);
+}
+
+function closeFullscreenMap() {
+  document.getElementById('map-fullscreen').classList.remove('show');
+}
+
+// ============================================================================
+// DRAG & DROP
+// ============================================================================
+function attachDragHandlers() {
+  document.querySelectorAll('.picking-card').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      card.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', card.dataset.pickingId);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+}
+function setupDropZones() {
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', e => { if (e.target === zone) zone.classList.remove('drag-over'); });
+    zone.addEventListener('drop', async e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      const pickingId = parseInt(e.dataTransfer.getData('text/plain'));
+      if (!pickingId) return;
+      if (zone.dataset.target === 'stops') {
+        if (!currentRouteId) { showToast('Seleccioná o creá una ruta primero', 'error'); return; }
+        await tryAddPickingToRoute(pickingId, currentRouteId);
+      }
+    });
+  });
+}
+
+// ============================================================================
+// LÓGICA
+// ============================================================================
+async function tryAddPickingToRoute(pickingId, routeId) {
+  const picking = store.available.find(p => p.pickingId === pickingId);
+  const route = store.routes[routeId];
+  if (!picking || !route) return;
+
+  // Chequear cruce de zonas
+  const stopsInRoute = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  if (stopsInRoute.length > 0) {
+    const existingRoots = new Set(stopsInRoute.map(s => (s.zone || 'Sin zona').split(' / ')[0]));
+    const newRoot = (picking.zone || 'Sin zona').split(' / ')[0];
+    if (!existingRoots.has(newRoot) || existingRoots.size > 1) {
+      // Cruce — pedir confirmación
+      const accept = await confirmCrossZone(route.name, [...existingRoots].join(' + '), picking.zone || 'Sin zona');
+      if (!accept) return;
+    }
+  }
+  addPickingToRoute(pickingId, routeId);
+}
+
+function confirmCrossZone(routeName, currentZones, newZone) {
+  return new Promise(resolve => {
+    document.getElementById('cz-route').textContent = routeName;
+    document.getElementById('cz-current').textContent = currentZones;
+    document.getElementById('cz-new').textContent = newZone;
+    openModal('cross-zone-modal');
+    const btn = document.getElementById('btn-cross-confirm');
+    const cleanup = () => {
+      btn.removeEventListener('click', onConfirm);
+      document.querySelector('#cross-zone-modal .btn').removeEventListener('click', onCancel);
+    };
+    function onConfirm() { closeModal('cross-zone-modal'); cleanup(); resolve(true); }
+    function onCancel() { closeModal('cross-zone-modal'); cleanup(); resolve(false); }
+    btn.addEventListener('click', onConfirm);
+    document.querySelector('#cross-zone-modal .btn').addEventListener('click', onCancel);
+  });
+}
+
+async function createRoute(name, driver, date, originAddr) {
+  const id = newId();
+  store.routes[id] = { id, name, driver, date, stops: [], originAddress: originAddr || '', originGeo: null, createdAt: new Date().toISOString() };
+  if (originAddr) {
+    try {
+      const result = await geocodeAddress(originAddr);
+      if (result) store.routes[id].originGeo = result;
+    } catch (e) { console.warn(e); }
+  }
+  saveStore();
+  currentRouteId = id;
+  renderAll();
+  showToast('Ruta creada: ' + name, 'success');
+}
+
+function deleteRoute(id) {
+  const route = store.routes[id];
+  if (!route) return;
+  route.stops.forEach(sid => {
+    const stop = store.stops[sid];
+    if (stop && stop.status === 'pendiente') {
+      store.available.push({
+        pickingId: stop.pickingId, pickingName: stop.pickingName, partner: stop.partner,
+        address: stop.address, addressForGeo: stop.addressForGeo, city: stop.city, state: stop.state,
+        phone: stop.phone, email: stop.email, scheduledDate: stop.scheduledDate,
+        origin: stop.origin, state_picking: stop.state_picking, zone: stop.zone
+      });
+    }
+    delete store.stops[sid];
+  });
+  delete store.routes[id];
+  saveStore();
+  if (currentRouteId === id) currentRouteId = null;
+  renderAll();
+  showToast('Ruta eliminada', 'success');
+}
+
+function addPickingToRoute(pickingId, routeId) {
+  const idx = store.available.findIndex(p => p.pickingId === pickingId);
+  if (idx === -1) return;
+  const picking = store.available[idx];
+  const stopId = newId();
+  store.stops[stopId] = {
+    id: stopId, pickingId: picking.pickingId, pickingName: picking.pickingName,
+    partner: picking.partner, address: picking.address, addressForGeo: picking.addressForGeo,
+    city: picking.city, state: picking.state, zone: picking.zone,
+    phone: picking.phone, email: picking.email,
+    scheduledDate: picking.scheduledDate, origin: picking.origin, state_picking: picking.state_picking,
+    status: 'pendiente', addedAt: new Date().toISOString()
+  };
+  store.routes[routeId].stops.push(stopId);
+  store.available.splice(idx, 1);
+  saveStore();
+  renderAll();
+}
+
+function selectRoute(id) { currentRouteId = id; renderAll(); }
+
+async function markStop(stopId, action) {
+  const stop = store.stops[stopId];
+  if (!stop) return;
+
+  if (action === 'edit-address') {
+    const current = stop.addressForGeo || stop.address || '';
+    const nueva = prompt(
+      `Dirección actual:\n${current}\n\n` +
+      `Editá la dirección para que Nominatim la encuentre:\n` +
+      `(ej: "Av. del Libertador 1000, CABA")`,
+      current
+    );
+    if (nueva === null || !nueva.trim()) return;
+    stop.addressForGeo = nueva.trim();
+    // Borrar coordenadas viejas para forzar re-geocoding
+    delete geoCache[geoCacheKey(stop)];
+    saveGeo();
+    saveStore();
+    showToast('Dirección actualizada — geocodificando...', 'info');
+    try {
+      const result = await geocodeWithFallback(stop);
+      if (result) {
+        geoCache[geoCacheKey(stop)] = result;
+        saveGeo();
+        showToast('✓ Coordenadas actualizadas', 'success');
+      } else {
+        showToast('✕ No se pudo geocodificar — probá otra dirección', 'error');
+      }
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error');
+    }
+    renderStops();
+    return;
+  }
+
+  if (action === 'entregar') {
+    showToast('Validando en Odoo...', 'info');
+    try {
+      const result = await odooExecute('stock.picking', 'button_validate', [[stop.pickingId]]);
+      if (result === true) {
+        stop.status = 'entregado'; stop.deliveredAt = new Date().toISOString();
+        saveStore(); renderAll();
+        showToast('✓ Entregado y validado en Odoo', 'success');
+      } else if (result && typeof result === 'object' && result.type === 'ir.actions.act_window') {
+        showToast('⚠ Odoo pide un wizard', 'error', 6000);
+      } else {
+        showToast('Respuesta inesperada de Odoo', 'error');
+      }
+    } catch (err) { showToast('Error: ' + err.message, 'error'); }
+  } else if (action === 'rechazar') {
+    const r = prompt('Motivo del rechazo:');
+    if (r === null) return;
+    stop.status = 'rechazado'; stop.reason = r || 'Sin motivo'; stop.deliveredAt = new Date().toISOString();
+    saveStore(); returnStopToPool(stopId);
+    showToast('Rechazado · devuelto al pool', 'success');
+  } else if (action === 'reprogramar') {
+    const r = prompt('Motivo / nueva fecha:');
+    if (r === null) return;
+    stop.status = 'reprogramado'; stop.reason = r || 'Reprogramado';
+    saveStore(); returnStopToPool(stopId);
+    showToast('Reprogramado · devuelto al pool', 'success');
+  } else if (action === 'deshacer') {
+    if (stop.status === 'entregado') showToast('No se puede deshacer en Odoo. Solo en la app.', 'error');
+    stop.status = 'pendiente'; delete stop.reason; delete stop.deliveredAt;
+    saveStore(); renderAll();
+  }
+
+  // Si el mapa fullscreen está abierto, refrescarlo para que se vean las paradas restantes
+  if (document.getElementById('map-fullscreen').classList.contains('show')) {
+    setTimeout(openFullscreenMap, 100);
+  }
+}
+
+function returnStopToPool(stopId) {
+  const stop = store.stops[stopId];
+  if (!stop) return;
+  store.available.push({
+    pickingId: stop.pickingId, pickingName: stop.pickingName, partner: stop.partner,
+    address: stop.address, addressForGeo: stop.addressForGeo, city: stop.city, state: stop.state,
+    phone: stop.phone, email: stop.email, scheduledDate: stop.scheduledDate,
+    origin: stop.origin, state_picking: stop.state_picking, zone: stop.zone
+  });
+  Object.values(store.routes).forEach(r => { r.stops = r.stops.filter(sid => sid !== stopId); });
+  delete store.stops[stopId];
+  saveStore(); renderAll();
+}
+
+function attachStopActions() {
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', () => markStop(btn.dataset.stopId, btn.dataset.action));
+  });
+}
+
+// ============================================================================
+// IMPRESIÓN
+// ============================================================================
+let printMap = null;
+function printRoute() {
+  if (!currentRouteId) return;
+  const route = store.routes[currentRouteId];
+  const stops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
+  if (stops.length === 0) { showToast('Sin paradas', 'error'); return; }
+
+  const zsum = getRouteZoneSummary(route);
+  document.getElementById('print-title').textContent = route.name;
+
+  // Calcular distancia/tiempo si tenemos routing cacheado
+  let routeMeta = `${route.driver || 'sin chofer'} · ${route.date || 'sin fecha'} · 📍 ${zsum.isMixed ? 'Mixta' : zsum.dominant}`;
+  const geocoded = stops.map(s => geoCache[geoCacheKey(s)]).filter(Boolean);
+  if (geocoded.length >= 2) {
+    const cacheKey = geocoded.map(g => `${g.lon.toFixed(4)},${g.lat.toFixed(4)}`).join('|');
+    const cached = routeCache[cacheKey];
+    if (cached) {
+      routeMeta += ` · 🛣️ ${formatDistance(cached.distance)} · ⏱️ ${formatDuration(cached.duration)}`;
+    }
+  }
+  document.getElementById('print-meta').textContent = routeMeta;
+  document.getElementById('print-count').textContent = stops.length;
+  document.getElementById('print-footer-left').textContent = `Hoja de ruta · ${route.driver || 'sin chofer'}`;
+  document.getElementById('print-footer-right').textContent = `Generado: ${new Date().toLocaleString('es-AR')}`;
+
+  document.getElementById('print-list').innerHTML = stops.map((s, i) => `
+    <div class="print-stop">
+      <div class="print-stop-num">${i + 1}</div>
+      <div class="print-stop-body">
+        <div class="print-stop-client">${escapeHtml(s.partner)}</div>
+        <div class="print-stop-meta">${escapeHtml(s.address)}</div>
+        ${s.phone ? `<div class="print-stop-meta">☎ ${escapeHtml(s.phone)}</div>` : ''}
+        <div class="print-stop-tags">
+          ${escapeHtml(s.pickingName)}
+          ${s.origin ? ' · ' + escapeHtml(s.origin) : ''}
+          ${s.scheduledDate ? ' · ' + escapeHtml(s.scheduledDate.substring(0,10)) : ''}
+        </div>
+        <div class="print-stop-actions">
+          <span><span class="print-stop-check"></span>Entregado</span>
+          <span><span class="print-stop-check"></span>Rechazado</span>
+          <span><span class="print-stop-check"></span>Reprogramar</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('main-container').style.display = 'none';
+  document.getElementById('print-page').style.display = 'block';
+
+  setTimeout(() => {
+    if (printMap) { printMap.remove(); printMap = null; }
+    const mapEl = document.getElementById('print-map');
+    mapEl.innerHTML = '';
+    printMap = L.map(mapEl, { zoomControl: false, attributionControl: false });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(printMap);
+
+    const geocoded = stops.map((s, i) => ({ stop: s, order: i + 1, geo: geoCache[geoCacheKey(s)] })).filter(x => x.geo);
+    if (geocoded.length === 0) {
+      printMap.setView([-34.6, -58.4], 5);
+      mapEl.innerHTML = '<div style="padding:20px;text-align:center;color:#666;font-style:italic">Sin coordenadas — geocodificá las paradas</div>';
+    } else {
+      geocoded.forEach(({ order, geo }) => {
+        const icon = L.divIcon({ html: `<div class="marker-num">${order}</div>`, className: 'marker-icon-wrapper', iconSize: [28, 28], iconAnchor: [14, 14] });
+        L.marker([geo.lat, geo.lon], { icon }).addTo(printMap);
+      });
+      if (geocoded.length > 1) {
+        L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#000', weight: 2 }).addTo(printMap);
+      }
+      printMap.fitBounds(L.latLngBounds(geocoded.map(g => [g.geo.lat, g.geo.lon])), { padding: [20, 20], maxZoom: 14 });
+    }
+
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.getElementById('main-container').style.display = '';
+        document.getElementById('print-page').style.display = 'none';
+        if (printMap) { printMap.remove(); printMap = null; }
+        if (miniMap) miniMap.invalidateSize();
+      }, 500);
+    }, 800);
+  }, 100);
+}
+
+// ============================================================================
+// ZONAS UI
+// ============================================================================
+document.getElementById('btn-zones').addEventListener('click', () => {
+  document.getElementById('zones-json').value = JSON.stringify(zones, null, 2);
+  document.getElementById('zones-error').style.display = 'none';
+  openModal('zones-modal');
+});
+
+document.getElementById('btn-save-zones').addEventListener('click', () => {
+  const txt = document.getElementById('zones-json').value;
+  const errEl = document.getElementById('zones-error');
+  try {
+    const parsed = JSON.parse(txt);
+    zones = parsed;
+    saveZones();
+    // Recalcular zonas de los pickings disponibles
+    store.available.forEach(p => { p.zone = getPickingZonePath(p); });
+    Object.values(store.stops).forEach(s => { s.zone = getPickingZonePath(s); });
+    saveStore();
+    closeModal('zones-modal');
+    selectedZonePath = null;
+    renderAll();
+    showToast('Zonas actualizadas', 'success');
+  } catch (e) {
+    errEl.textContent = 'JSON inválido: ' + e.message;
+    errEl.style.display = 'block';
+  }
+});
+
+document.getElementById('btn-reset-zones').addEventListener('click', () => {
+  document.getElementById('zones-json').value = JSON.stringify(DEFAULT_ZONES, null, 2);
+});
+
+document.getElementById('btn-clear-zone').addEventListener('click', () => {
+  selectedZonePath = null;
+  renderZoneTree();
+  renderAvailable();
+});
+
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
+document.getElementById('btn-config').addEventListener('click', () => {
+  if (config) {
+    document.getElementById('cfg-url').value = config.url || '';
+    document.getElementById('cfg-db').value = config.db || '';
+    document.getElementById('cfg-username').value = config.username || '';
+    document.getElementById('cfg-apikey').value = config.apikey || '';
+    document.getElementById('cfg-ptype').value = config.ptype || 8;
+  }
+  document.getElementById('cfg-orskey').value = orsKey || '';
+  openModal('config-modal');
+});
+
+document.getElementById('btn-save-config').addEventListener('click', async () => {
+  config = {
+    url: document.getElementById('cfg-url').value.trim().replace(/\/$/, ''),
+    db: document.getElementById('cfg-db').value.trim(),
+    username: document.getElementById('cfg-username').value.trim(),
+    apikey: document.getElementById('cfg-apikey').value.trim(),
+    ptype: parseInt(document.getElementById('cfg-ptype').value) || 8
+  };
+  // Guardar también la ORS key
+  orsKey = document.getElementById('cfg-orskey').value.trim();
+  saveOrsKey();
+
+  if (!config.url || !config.db || !config.username || !config.apikey) { showToast('Completá todos los campos de Odoo', 'error'); return; }
+  saveConfig(); uid = null; closeModal('config-modal');
+  document.getElementById('config-notice').style.display = 'none';
+  setStatus('', 'Autenticando...', '');
+  try {
+    await odooAuth();
+    showToast('Conectado' + (orsKey ? ' · Routing real activado 🛣️' : ''), 'success');
+    loadAvailablePickings();
+  } catch (err) {
+    setStatus('error', 'Error', err.message);
+    showToast('Error: ' + err.message, 'error');
+  }
+});
+
+document.getElementById('btn-refresh').addEventListener('click', () => {
+  if (!config) { showToast('Configurá Odoo primero', 'error'); return; }
+  uid = null; loadAvailablePickings();
+});
+
+document.getElementById('btn-new-route').addEventListener('click', () => {
+  document.getElementById('route-name').value = '';
+  document.getElementById('route-driver').value = '';
+  document.getElementById('route-date').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('route-origin').value = '';
+  openModal('route-modal');
+});
+
+document.getElementById('btn-save-route').addEventListener('click', async () => {
+  const name = document.getElementById('route-name').value.trim();
+  const driver = document.getElementById('route-driver').value.trim();
+  const date = document.getElementById('route-date').value;
+  const origin = document.getElementById('route-origin').value.trim();
+  if (!name) { showToast('Poné un nombre', 'error'); return; }
+  closeModal('route-modal');
+  await createRoute(name, driver, date, origin);
+});
+
+document.getElementById('btn-delete-route').addEventListener('click', () => {
+  if (!currentRouteId) return;
+  const route = store.routes[currentRouteId];
+  if (!confirm(`¿Eliminar "${route.name}"? Los pendientes vuelven al pool.`)) return;
+  deleteRoute(currentRouteId);
+});
+
+document.getElementById('btn-geocode').addEventListener('click', () => { if (currentRouteId) geocodeRoute(currentRouteId); });
+document.getElementById('btn-optimize').addEventListener('click', () => { if (currentRouteId) optimizeRoute(currentRouteId); });
+document.getElementById('btn-print').addEventListener('click', printRoute);
+document.getElementById('btn-view-map').addEventListener('click', openFullscreenMap);
+document.getElementById('btn-google-maps').addEventListener('click', () => { if (currentRouteId) openInGoogleMaps(currentRouteId); });
+document.getElementById('btn-fs-close').addEventListener('click', closeFullscreenMap);
+document.getElementById('btn-fs-google').addEventListener('click', () => { if (currentRouteId) openInGoogleMaps(currentRouteId); });
+document.getElementById('btn-fs-optimize').addEventListener('click', () => {
+  if (currentRouteId) {
+    optimizeRoute(currentRouteId);
+    setTimeout(openFullscreenMap, 100); // refrescar el modal
+  }
+});
+document.getElementById('btn-fs-print').addEventListener('click', () => {
+  closeFullscreenMap();
+  setTimeout(printRoute, 200);
+});
+// ESC para cerrar
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('map-fullscreen').classList.contains('show')) {
+    closeFullscreenMap();
+  }
+});
+document.getElementById('search-available').addEventListener('input', renderAvailable);
+document.getElementById('hide-no-address').addEventListener('change', renderAvailable);
+
+// ============================================================================
+// INIT
+// ============================================================================
+setupDropZones();
+
+renderAll();
+
+if (!config) {
+  setStatus('', 'Sin configuración', '');
+  document.getElementById('config-notice').style.display = 'block';
+} else {
+  setStatus('', 'Conectando...', '');
+  odooAuth().then(() => loadAvailablePickings()).catch(err => {
+    setStatus('error', 'Error', err.message);
+    showToast('Error: ' + err.message, 'error');
+  });
+}
+</script>
+</body>
+</html>
