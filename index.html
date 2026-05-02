@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root {
     /* Paleta Escaleras Mil — industrial */
@@ -334,97 +332,8 @@
   ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--ink-soft); }
 
-  /* Map fullscreen modal */
-  .map-fullscreen {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 1500;
-    background: var(--bg);
-    flex-direction: column;
-  }
-  .map-fullscreen.show { display: flex; }
-  .map-fullscreen-header {
-    padding: 12px 20px;
-    background: var(--ink);
-    color: var(--bg);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .map-fullscreen-header h3 {
-    font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 700;
-    font-size: 22px;
-    letter-spacing: -0.01em;
-  }
-  .map-fullscreen-header .meta {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--ink-faded);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 2px;
-  }
-  .map-fullscreen-actions { display: flex; gap: 8px; }
-  .map-fullscreen-actions .btn {
-    background: transparent;
-    color: var(--bg);
-    border-color: rgba(255,255,255,0.2);
-  }
-  .map-fullscreen-actions .btn:hover {
-    border-color: var(--bg);
-    color: var(--bg);
-  }
-  .map-fullscreen-body {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    overflow: hidden;
-  }
-  .map-fullscreen-list {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    padding: 8px;
-  }
-  .map-fullscreen-stop {
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    margin-bottom: 6px;
-    cursor: pointer;
-    transition: all 0.15s;
-    border-left: 3px solid var(--ink-faded);
-  }
-  .map-fullscreen-stop:hover { background: var(--accent-soft); border-color: var(--accent); }
-  .map-fullscreen-stop.s-entregado { border-left-color: var(--green); background: #f0fdf4; }
-  .map-fullscreen-stop.s-rechazado { border-left-color: var(--red); background: #fef2f2; }
-  .map-fullscreen-stop.s-reprogramado { border-left-color: var(--amber); background: #fffbeb; }
-  .map-fullscreen-stop .num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; border-radius: 100px;
-    background: var(--ink); color: white;
-    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
-    margin-right: 6px;
-  }
-  .map-fullscreen-stop.s-entregado .num { background: var(--green); }
-  .map-fullscreen-stop.s-rechazado .num { background: var(--red); }
-  .map-fullscreen-stop.s-reprogramado .num { background: var(--amber); }
-  .map-fullscreen-stop .client { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 13px; line-height: 1.2; margin-top: 4px; }
-  .map-fullscreen-stop .addr { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
-  .map-fullscreen-stop .no-geo-warn { font-size: 9px; color: var(--red); margin-top: 4px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
-  #fullscreen-map { width: 100%; height: 100%; }
-
-  @media (max-width: 700px) {
-    .map-fullscreen-body { grid-template-columns: 1fr; grid-template-rows: 200px 1fr; }
-    .map-fullscreen-list { border-right: none; border-bottom: 1px solid var(--border); }
-  }
-
   /* Map */
   #mini-map { width: 100%; height: 100%; }
-  .leaflet-container { font-family: inherit; }
   .marker-num { background: var(--accent); color: white; border: 2px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px; }
   .marker-num.entregado { background: var(--green); }
   .marker-num.rechazado { background: var(--red); }
@@ -560,8 +469,8 @@
           <div class="subtitle" style="margin-top:2px" id="route-detail-meta">—</div>
         </div>
         <div class="panel-actions" id="route-actions" style="display:none">
-          <button class="btn btn-sm" id="btn-view-map" title="Ver mapa fullscreen">🗺️ Ver mapa</button>
           <button class="btn btn-sm" id="btn-google-maps" title="Abrir en Google Maps">🌐 Google Maps</button>
+          <button class="btn btn-sm" id="btn-waze" title="Abrir primera parada en Waze">🚗 Waze</button>
           <button class="btn btn-sm" id="btn-geocode" title="Buscar coordenadas">📍 Geocodificar</button>
           <button class="btn btn-sm" id="btn-optimize" title="Reordenar">🧠 Optimizar</button>
           <button class="btn btn-sm" id="btn-print" title="Imprimir">🖨 Imprimir</button>
@@ -610,25 +519,6 @@
   </div>
 </div>
 
-<!-- Map fullscreen -->
-<div class="map-fullscreen" id="map-fullscreen">
-  <div class="map-fullscreen-header">
-    <div>
-      <h3 id="fs-title">—</h3>
-      <div class="meta" id="fs-meta">—</div>
-    </div>
-    <div class="map-fullscreen-actions">
-      <button class="btn" id="btn-fs-google">🌐 Abrir en Google Maps</button>
-      <button class="btn" id="btn-fs-optimize">🧠 Optimizar</button>
-      <button class="btn" id="btn-fs-print">🖨 Imprimir</button>
-      <button class="btn" id="btn-fs-close">✕ Cerrar</button>
-    </div>
-  </div>
-  <div class="map-fullscreen-body">
-    <div class="map-fullscreen-list" id="fs-list"></div>
-    <div id="fullscreen-map"></div>
-  </div>
-</div>
 
 <!-- Modal config Odoo -->
 <div class="modal-overlay" id="config-modal">
@@ -1530,140 +1420,21 @@ function openInGoogleMaps(routeId) {
 }
 
 // ============================================================================
-// MAPA FULLSCREEN
+// WAZE
 // ============================================================================
-let fsMap = null;
-let fsMarkers = [];
-let fsPolyline = null;
-
-function ensureFsMap() {
-  if (fsMap) return fsMap;
-  const el = document.getElementById('fullscreen-map');
-  fsMap = L.map(el, { zoomControl: true }).setView([-34.6, -58.4], 11);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(fsMap);
-  return fsMap;
-}
-
-function clearFsMapLayers() {
-  if (!fsMap) return;
-  fsMarkers.forEach(m => fsMap.removeLayer(m));
-  fsMarkers = [];
-  if (fsPolyline) { fsMap.removeLayer(fsPolyline); fsPolyline = null; }
-}
-
-function openFullscreenMap() {
-  if (!currentRouteId) return;
-  const route = store.routes[currentRouteId];
+function openInWaze(routeId) {
+  const route = store.routes[routeId];
   if (!route) return;
-  const allStops = route.stops.map(sid => store.stops[sid]).filter(Boolean);
-
-  // SOLO pendientes para el mapa (las entregadas/rechazadas/reprogramadas desaparecen)
-  const stops = allStops.filter(s => s.status === 'pendiente');
-  const totalStops = allStops.length;
-  const counts = { entregado: 0, rechazado: 0, reprogramado: 0, pendiente: 0 };
-  allStops.forEach(s => counts[s.status] = (counts[s.status] || 0) + 1);
-
-  const zsum = getRouteZoneSummary(route);
-  document.getElementById('fs-title').textContent = route.name;
-  const zoneLabel = stops.length === 0 ? '' : (zsum.isMixed ? 'Mixta' : zsum.dominant);
-  const progressLabel = `${counts.pendiente} pend · ${counts.entregado} entr` + (counts.rechazado ? ` · ${counts.rechazado} rech` : '') + (counts.reprogramado ? ` · ${counts.reprogramado} reprog` : '');
-  const baseMeta = `${route.driver || 'sin chofer'} · ${route.date || 'sin fecha'} · ${progressLabel}` + (zoneLabel ? ` · 📍 ${zoneLabel}` : '');
-  document.getElementById('fs-meta').textContent = baseMeta;
-
-  // Lista lateral — solo pendientes
-  const listEl = document.getElementById('fs-list');
-  if (stops.length === 0) {
-    if (totalStops > 0) {
-      listEl.innerHTML = `<div class="empty">✓ Ruta completa<br><span style="font-size:11px;color:var(--ink-faded)">${counts.entregado} entregadas · ${counts.rechazado} rechazadas · ${counts.reprogramado} reprogramadas</span></div>`;
-    } else {
-      listEl.innerHTML = '<div class="empty">Sin paradas</div>';
-    }
-  } else {
-    listEl.innerHTML = stops.map((s, i) => {
-      const geo = geoCache[geoCacheKey(s)];
-      return `
-        <div class="map-fullscreen-stop s-${s.status}" data-stop-id="${s.id}" data-idx="${i}" ${geo ? `data-lat="${geo.lat}" data-lon="${geo.lon}"` : ''}>
-          <span class="num">${i + 1}</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700">${escapeHtml(s.pickingName)}</span>
-          <div class="client">${escapeHtml(s.partner)}</div>
-          <div class="addr">${escapeHtml(s.address)}</div>
-          ${!geo ? '<div class="no-geo-warn">⚠ Sin coordenadas</div>' : ''}
-        </div>`;
-    }).join('');
-    listEl.querySelectorAll('.map-fullscreen-stop').forEach(el => {
-      el.addEventListener('click', () => {
-        const lat = parseFloat(el.dataset.lat);
-        const lon = parseFloat(el.dataset.lon);
-        if (!isNaN(lat) && !isNaN(lon)) {
-          fsMap.setView([lat, lon], 16);
-          const idx = parseInt(el.dataset.idx);
-          if (fsMarkers[idx]) fsMarkers[idx].openPopup();
-        }
-      });
-    });
-  }
-
-  document.getElementById('map-fullscreen').classList.add('show');
-
-  setTimeout(async () => {
-    ensureFsMap();
-    fsMap.invalidateSize();
-    clearFsMapLayers();
-
-    const geocoded = stops.map((s, i) => ({ stop: s, idx: i, geo: geoCache[geoCacheKey(s)] })).filter(x => x.geo);
-    if (geocoded.length === 0) return;
-
-    // Markers solo de pendientes, renumerados desde 1
-    fsMarkers = stops.map((s, i) => {
-      const geo = geoCache[geoCacheKey(s)];
-      if (!geo) return null;
-      const icon = L.divIcon({
-        html: `<div class="marker-num">${i + 1}</div>`,
-        className: 'marker-icon-wrapper',
-        iconSize: [28, 28], iconAnchor: [14, 14]
-      });
-      const m = L.marker([geo.lat, geo.lon], { icon }).addTo(fsMap);
-      m.bindPopup(`<strong>${escapeHtml(s.partner)}</strong><br>${escapeHtml(s.address)}<br><small>${escapeHtml(s.pickingName)}${s.phone ? ' · ☎ ' + escapeHtml(s.phone) : ''}</small>`);
-      return m;
-    });
-
-    fsMap.fitBounds(L.latLngBounds(geocoded.map(g => [g.geo.lat, g.geo.lon])), { padding: [40, 40], maxZoom: 14 });
-
-    // Routing real solo con las pendientes
-    if (geocoded.length >= 2) {
-      if (!orsKey) {
-        fsPolyline = L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#c2410c', weight: 3, opacity: 0.5, dashArray: '8,5' }).addTo(fsMap);
-        document.getElementById('fs-meta').textContent = baseMeta + ' · ⚠ Configurá ORS para ver ruta real';
-      } else {
-        const tempLine = L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#c2410c', weight: 2, opacity: 0.3, dashArray: '4,4' }).addTo(fsMap);
-        document.getElementById('fs-meta').textContent = baseMeta + ' · 🛣️ calculando ruta...';
-
-        try {
-          const coords = geocoded.map(g => [g.geo.lon, g.geo.lat]);
-          const routeData = await getRoadRoute(coords);
-          fsMap.removeLayer(tempLine);
-          fsPolyline = L.geoJSON(routeData.geometry, {
-            style: { color: '#c2410c', weight: 5, opacity: 0.8 }
-          }).addTo(fsMap);
-          fsPolyline.bringToBack();
-          fsMap.fitBounds(fsPolyline.getBounds(), { padding: [40, 40], maxZoom: 14 });
-          document.getElementById('fs-meta').textContent = baseMeta + ` · 🛣️ Faltan ${formatDistance(routeData.distance)} · ⏱️ ${formatDuration(routeData.duration)}`;
-        } catch (err) {
-          fsMap.removeLayer(tempLine);
-          fsPolyline = L.polyline(geocoded.map(g => [g.geo.lat, g.geo.lon]), { color: '#c2410c', weight: 3, opacity: 0.5, dashArray: '8,5' }).addTo(fsMap);
-          document.getElementById('fs-meta').textContent = baseMeta + ' · ⚠ ' + err.message;
-        }
-      }
-    } else if (geocoded.length === 1) {
-      // Solo una pendiente
-      document.getElementById('fs-meta').textContent = baseMeta + ' · 🎯 Última parada';
-    }
-  }, 100);
+  const pending = route.stops.map(sid => store.stops[sid]).filter(s => s && s.status === 'pendiente');
+  if (pending.length === 0) { showToast('No hay paradas pendientes', 'error'); return; }
+  const first = pending[0];
+  const geo = geoCache[geoCacheKey(first)];
+  const url = geo
+    ? `https://waze.com/ul?ll=${geo.lat},${geo.lon}&navigate=yes`
+    : `https://waze.com/ul?q=${encodeURIComponent(first.address)}&navigate=yes`;
+  window.open(url, '_blank');
 }
 
-function closeFullscreenMap() {
-  document.getElementById('map-fullscreen').classList.remove('show');
-}
 
 // ============================================================================
 // DRAG & DROP
@@ -1860,10 +1631,6 @@ async function markStop(stopId, action) {
     saveStore(); renderAll();
   }
 
-  // Si el mapa fullscreen está abierto, refrescarlo para que se vean las paradas restantes
-  if (document.getElementById('map-fullscreen').classList.contains('show')) {
-    setTimeout(openFullscreenMap, 100);
-  }
 }
 
 function returnStopToPool(stopId) {
@@ -2083,26 +1850,8 @@ document.getElementById('btn-delete-route').addEventListener('click', () => {
 document.getElementById('btn-geocode').addEventListener('click', () => { if (currentRouteId) geocodeRoute(currentRouteId); });
 document.getElementById('btn-optimize').addEventListener('click', () => { if (currentRouteId) optimizeRoute(currentRouteId); });
 document.getElementById('btn-print').addEventListener('click', printRoute);
-document.getElementById('btn-view-map').addEventListener('click', openFullscreenMap);
 document.getElementById('btn-google-maps').addEventListener('click', () => { if (currentRouteId) openInGoogleMaps(currentRouteId); });
-document.getElementById('btn-fs-close').addEventListener('click', closeFullscreenMap);
-document.getElementById('btn-fs-google').addEventListener('click', () => { if (currentRouteId) openInGoogleMaps(currentRouteId); });
-document.getElementById('btn-fs-optimize').addEventListener('click', () => {
-  if (currentRouteId) {
-    optimizeRoute(currentRouteId);
-    setTimeout(openFullscreenMap, 100); // refrescar el modal
-  }
-});
-document.getElementById('btn-fs-print').addEventListener('click', () => {
-  closeFullscreenMap();
-  setTimeout(printRoute, 200);
-});
-// ESC para cerrar
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('map-fullscreen').classList.contains('show')) {
-    closeFullscreenMap();
-  }
-});
+document.getElementById('btn-waze').addEventListener('click', () => { if (currentRouteId) openInWaze(currentRouteId); });
 document.getElementById('search-available').addEventListener('input', renderAvailable);
 document.getElementById('hide-no-address').addEventListener('change', renderAvailable);
 
