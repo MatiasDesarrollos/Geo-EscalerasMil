@@ -339,8 +339,133 @@
   .marker-num.rechazado { background: var(--red); }
   .marker-num.reprogramado { background: var(--amber); }
 
+  /* Mobile tabs (hidden on desktop) */
+  .mobile-tabs { display: none; }
+
   /* Print */
   .print-page { display: none; background: white; color: black; }
+
+  /* ============================================================
+     MOBILE — 768px y menos
+     ============================================================ */
+  @media (max-width: 768px) {
+    /* Ocultar topbar y reducir brand */
+    .topbar { display: none; }
+    .brand-header { padding: 8px 14px; margin-bottom: 10px; }
+    .brand-logo img { height: 36px; }
+    .brand-divider { display: none; }
+    .app-title h1 { font-size: 22px; }
+    .app-title .sub { display: none; }
+
+    .container { padding: 0 8px; }
+
+    /* Toolbar más compacto */
+    header.app-toolbar { padding: 8px 10px; margin-bottom: 8px; gap: 8px; }
+    .toolbar-info { font-size: 12px; }
+    .btn { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+    .btn-ghost { min-height: 36px; padding: 8px 10px; }
+    .btn-sm { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+
+    /* Status bar */
+    .status-bar { font-size: 10px; padding: 6px 10px; margin-bottom: 8px; }
+
+    /* Workspace: un panel a la vez */
+    .workspace {
+      display: block;
+      height: calc(100dvh - 170px);
+      min-height: 0;
+      margin-bottom: 0;
+    }
+    .workspace .panel { display: none; height: 100%; }
+    .workspace .panel.mobile-active { display: flex; }
+
+    /* Panel actions: botones más grandes */
+    .panel-actions { gap: 6px; padding: 8px 10px; width: 100%; border-top: 1px solid var(--border); }
+
+    /* Google Maps y Waze: prominentes en mobile */
+    #btn-google-maps, #btn-waze {
+      flex: 1;
+      min-width: 120px;
+      font-size: 15px;
+      min-height: 52px;
+      font-weight: 700;
+    }
+    #btn-waze { background: var(--accent); color: white; border-color: var(--accent); }
+    #btn-waze:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+    /* Botones secundarios más chicos en mobile */
+    #btn-geocode, #btn-optimize, #btn-print, #btn-delete-route {
+      flex: 1;
+      min-width: 80px;
+      font-size: 12px;
+      min-height: 40px;
+    }
+
+    /* Stop cards — touch targets */
+    .stop-card { padding: 14px 12px; }
+    .stop-order { width: 28px; height: 28px; font-size: 13px; }
+    .action-btn { min-height: 44px; padding: 10px 8px; font-size: 11px; min-width: 0; flex: 1; }
+
+    /* Picking cards */
+    .picking-card { padding: 14px 12px; }
+
+    /* Route cards */
+    .route-card { padding: 16px 14px; }
+    .rc-name { font-size: 20px; }
+
+    /* Zone tree más compacta */
+    .zone-tree-wrap { max-height: 140px; }
+    .zone-row { padding: 7px 10px; }
+
+    /* Modal desde abajo en mobile */
+    .modal-overlay { align-items: flex-end; }
+    .modal {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 16px 16px 0 0;
+      max-height: 88vh;
+      padding: 20px 18px;
+    }
+    .modal textarea { min-height: 180px; }
+
+    /* Toast sobre los tabs */
+    .toast { bottom: 72px; right: 12px; left: 12px; max-width: none; text-align: center; }
+
+    /* Ocultar footer */
+    footer { display: none; }
+
+    /* Tab bar */
+    .mobile-tabs {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--ink);
+      border-top: 2px solid var(--accent);
+      z-index: 900;
+    }
+    .mobile-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 4px 10px;
+      gap: 2px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: rgba(255,255,255,0.4);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      transition: color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-tab.active { color: white; }
+    .mobile-tab .tab-icon { font-size: 22px; line-height: 1; }
+  }
   @media print {
     body * { visibility: hidden; }
     .print-page, .print-page * { visibility: visible; }
@@ -484,6 +609,21 @@
       </div>
     </div>
   </div>
+
+  <nav class="mobile-tabs" id="mobile-tabs">
+    <button class="mobile-tab" onclick="switchTab('available')">
+      <span class="tab-icon">📦</span>
+      <span>Disponibles</span>
+    </button>
+    <button class="mobile-tab active" onclick="switchTab('routes')">
+      <span class="tab-icon">🗺️</span>
+      <span>Rutas</span>
+    </button>
+    <button class="mobile-tab" onclick="switchTab('detail')">
+      <span class="tab-icon">📋</span>
+      <span>Detalle</span>
+    </button>
+  </nav>
 
   <footer style="margin-top: 24px; padding: 16px 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
     <div style="display: flex; align-items: center; gap: 12px;">
@@ -1540,6 +1680,7 @@ function deleteRoute(id) {
   saveStore();
   if (currentRouteId === id) currentRouteId = null;
   renderAll();
+  if (window.innerWidth <= 768) switchTab('routes');
   showToast('Ruta eliminada', 'success');
 }
 
@@ -1562,7 +1703,19 @@ function addPickingToRoute(pickingId, routeId) {
   renderAll();
 }
 
-function selectRoute(id) { currentRouteId = id; renderAll(); }
+function switchTab(tab) {
+  const panels = document.querySelectorAll('.workspace .panel');
+  const tabs = document.querySelectorAll('.mobile-tab');
+  const idx = { available: 0, routes: 1, detail: 2 }[tab];
+  panels.forEach((p, i) => p.classList.toggle('mobile-active', i === idx));
+  tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+}
+
+function selectRoute(id) {
+  currentRouteId = id;
+  renderAll();
+  if (window.innerWidth <= 768) switchTab('detail');
+}
 
 async function markStop(stopId, action) {
   const stop = store.stops[stopId];
@@ -1888,6 +2041,9 @@ async function init() {
 }
 
 init();
+
+// Inicializar tab mobile: arrancar en "Rutas"
+if (window.innerWidth <= 768) switchTab('routes');
 </script>
 </body>
 </html>
